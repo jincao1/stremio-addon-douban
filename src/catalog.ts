@@ -120,6 +120,8 @@ catalogRouter.get("*", async (c) => {
     name: item.title,
     type: item.type === "tv" ? "series" : "movie",
     poster: item.cover ?? undefined,
+    description: item.description ?? undefined,
+    background: item.photos?.[0] ?? undefined,
   }));
 
   return c.json({ metas } satisfies WithCache<{ metas: MetaPreview[] }>);

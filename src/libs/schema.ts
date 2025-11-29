@@ -14,11 +14,21 @@ const doubanSubjectCollectionItemSchema = z
         url: z.string(),
       })
       .nullish(),
+    pic: z
+      .object({
+        large: z.string().nullish(),
+        normal: z.string().nullish(),
+      })
+      .nullish(),
+    photos: z.array(z.string()).nullish(),
+    description: z.string().nullish(),
+    comment: z.string().nullish(),
   })
   .transform((v) => ({
     ...v,
-    cover: v.cover?.url ?? v.cover_url,
+    cover: v.cover?.url ?? v.cover_url ?? v.pic?.large ?? v.pic?.normal,
     year: v.year ?? v.card_subtitle?.split("/")?.[0].trim(),
+    description: v.description || v.comment,
   }));
 
 export type DoubanSubjectCollectionItem = z.output<typeof doubanSubjectCollectionItemSchema>;
