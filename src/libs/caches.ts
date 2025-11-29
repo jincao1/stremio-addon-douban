@@ -11,7 +11,7 @@ export const doubanSubjectCollectionCache = new LRUCache<string, z.output<typeof
     const resp = await http.get(`https://m.douban.com/rexxar/api/v2/subject_collection/${id}/items`, {
       params: {
         start: skip ?? 0,
-        count: 1,
+        count: 10,
         for_mobile: 1,
       },
       headers: {
