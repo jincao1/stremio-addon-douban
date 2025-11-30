@@ -32,11 +32,14 @@ export class Douban {
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF MacWechat/3.8.7(0x13080712) UnifiedPCMacWechat(0xf264101d) XWEB/16390",
       },
-      params: {
-        apiKey: this.cloudflareBindings?.DOUBAN_API_KEY || process.env.DOUBAN_API_KEY,
-      },
     });
     this.http.interceptors.request.use((config) => {
+      const finalUri = axios.getUri(config);
+      if (finalUri.startsWith("https://frodo.douban.com/")) {
+        config.params ||= {};
+        config.params.apiKey = this.cloudflareBindings?.DOUBAN_API_KEY || process.env.DOUBAN_API_KEY;
+      }
+
       console.info("⬆️", config.method?.toUpperCase(), axios.getUri(config));
       return config;
     });
@@ -95,15 +98,12 @@ export class Douban {
     fetchMethod: async (key, _, { signal }) => {
       const resp = await this.http.get<{ html: string }>(`/subject/${key}/desc`, { signal });
       const $ = cheerioLoad(resp.data.html);
-      const info = $(".subject-desc table")
-        .find("tr")
-        .map((_, el) => {
-          const $el = $(el);
-          const key = $el.find("td:first-child").text().trim();
-          const value = $el.find("td:last-child").text().trim();
-          return [key, value];
-        })
-        .toArray() as unknown as [string, string][];
+      const info = Array.from($(".subject-desc table").find("tr")).map((el) => {
+        const $el = $(el);
+        const key = $el.find("td:first-child").text().trim();
+        const value = $el.find("td:last-child").text().trim();
+        return [key, value];
+      });
       return Object.fromEntries(info);
     },
   });
@@ -125,6 +125,7 @@ export class Douban {
     const missingIds = doubanIds.filter((id) => !mappedIds.has(id));
     return { mappingCache, missingIds };
   }
+
   async persistDoubanIdMapping(mappings: DoubanIdMapping[]) {
     if (mappings.length === 0) return;
     await this.db
@@ -136,7 +137,7 @@ export class Douban {
       });
   }
 
-  async findTmdbId(parmas: FindTmdbIdParams) {
+  private async findTmdbId(parmas: FindTmdbIdParams) {
     const { type, doubanId, originalTitle, year: defaultYear } = parmas;
     let query = originalTitle;
     let year = defaultYear;
@@ -178,10 +179,12 @@ export class Douban {
       imdbId: null,
       tmdbId: null,
     };
+    console.group(`🔍 Douban ID => ${parmas.doubanId}`);
     // 二者有其一即可，优先使用 IMDb ID
     try {
       const detail = await this.getSubjectDetailDesc(parmas.doubanId);
       if (detail?.IMDb) {
+        console.info("🔍 Douban ID => IMDb ID", detail.IMDb);
         result.imdbId = detail.IMDb;
       }
     } catch (error) {}
@@ -189,10 +192,13 @@ export class Douban {
       try {
         const tmdbId = await this.findTmdbId(parmas);
         if (tmdbId) {
+          console.info("🔍 Douban ID => TMDb ID", tmdbId);
           result.tmdbId = tmdbId;
         }
       } catch (error) {}
     }
+    console.info("🔍 Douban ID => Result", result);
+    console.groupEnd();
     return result;
   }
 }
