@@ -23,7 +23,7 @@ catalogRouter.get("*", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  douban.initialize(c.env);
+  douban.initialize(c);
 
   // 获取豆瓣合集数据
   const skip = params.extra?.skip ?? c.req.query("skip") ?? 0;
@@ -83,7 +83,7 @@ catalogRouter.get("*", async (c) => {
 });
 
 export const getCatalogs = async (c: Context<Env>) => {
-  douban.initialize(c.env);
+  douban.initialize(c);
 
   const collectionIds: Array<ManifestCatalog & { total: number | "fetch" }> = [
     { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie", total: "fetch" },

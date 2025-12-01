@@ -2,7 +2,7 @@ import axios, { type AxiosInstance } from "axios";
 import { load as cheerioLoad } from "cheerio";
 import { inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import type { Env } from "hono";
+import type { Context, Env } from "hono";
 import { LRUCache } from "lru-cache";
 import type { z } from "zod";
 import { type DoubanIdMapping, doubanMapping } from "../db";
@@ -18,7 +18,17 @@ interface FindTmdbIdParams {
 export class Douban {
   static PAGE_SIZE = 10;
 
-  private cloudflareBindings?: Env["Bindings"];
+  private _context?: Context<Env>;
+
+  get context() {
+    if (!this._context) {
+      throw new Error("Context not initialized");
+    }
+    return this._context;
+  }
+  set context(context: Context<Env>) {
+    this._context = context;
+  }
 
   private http: AxiosInstance;
 
@@ -33,34 +43,56 @@ export class Douban {
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF MacWechat/3.8.7(0x13080712) UnifiedPCMacWechat(0xf264101d) XWEB/16390",
       },
     });
-    this.http.interceptors.request.use((config) => {
+    this.http.interceptors.request.use(async (config) => {
       const finalUri = axios.getUri(config);
       if (finalUri.startsWith("https://frodo.douban.com/")) {
         config.params ||= {};
-        config.params.apiKey = this.cloudflareBindings?.DOUBAN_API_KEY || process.env.DOUBAN_API_KEY;
+        config.params.apiKey = this.context.env.DOUBAN_API_KEY || process.env.DOUBAN_API_KEY;
       }
-
-      console.info("⬆️", config.method?.toUpperCase(), axios.getUri(config));
+      console.info("⬆️", config.method?.toUpperCase(), finalUri);
       return config;
     });
   }
 
-  initialize(cloudflareBindings: Env["Bindings"]) {
-    this.cloudflareBindings = cloudflareBindings;
+  private withFetchWithCache<T extends object>(
+    fetcher: (key: string, signal: AbortSignal) => Promise<T>,
+    options: {
+      keyPrefix: string;
+      ttl: number;
+      max?: number;
+    },
+  ) {
+    const { keyPrefix, ttl, max = 500 } = options;
+    return new LRUCache<string, T>({
+      max,
+      ttl,
+      fetchMethod: async (key, _, { signal }) => {
+        const cache = caches.default;
+        const cacheKey = new Request(`https://cache.internal/${keyPrefix}/${key}`);
+        const cachedRes = await cache.match(cacheKey);
+        if (cachedRes) {
+          console.info("⚡️ L2 Cache Hit", keyPrefix, key);
+          return cachedRes.json();
+        }
+        console.info("🐢 L2 Cache Miss", keyPrefix, key);
+        const data = await fetcher(key, signal);
+        this.context.executionCtx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data))));
+        return data;
+      },
+    });
+  }
+
+  initialize(context: Context<Env>) {
+    this.context = context;
   }
 
   private get db() {
-    if (!this.cloudflareBindings?.stremio_addon_douban) {
-      throw new Error("Database not initialized");
-    }
-    return drizzle(this.cloudflareBindings?.stremio_addon_douban);
+    return drizzle(this.context.env.stremio_addon_douban);
   }
 
   //#region Subject Collection
-  private getSubjectCollectionCache = new LRUCache<string, z.output<typeof doubanSubjectCollectionSchema>>({
-    max: 500,
-    ttl: 1000 * SECONDS_PER_HOUR * 2,
-    fetchMethod: async (key, _, { signal }) => {
+  private getSubjectCollectionCache = this.withFetchWithCache<z.output<typeof doubanSubjectCollectionSchema>>(
+    async (key, signal) => {
       const [id, skip] = key.split(":");
       const resp = await this.http.get(`/subject_collection/${id}/items`, {
         params: {
@@ -71,31 +103,37 @@ export class Douban {
       });
       return doubanSubjectCollectionSchema.parse(resp.data);
     },
-  });
+    {
+      keyPrefix: "subject_collection",
+      max: 500,
+      ttl: 1000 * SECONDS_PER_HOUR * 2,
+    },
+  );
   getSubjectCollection(collectionId: string, skip: string | number = 0) {
     return this.getSubjectCollectionCache.fetch(`${collectionId}:${skip}`);
   }
   //#endregion
 
   //#region Subject Detail
-  private getSubjectDetailCache = new LRUCache<string, z.output<typeof doubanSubjectDetailSchema>>({
-    max: 500,
-    ttl: 1000 * SECONDS_PER_DAY,
-    fetchMethod: async (key, _, { signal }) => {
+  private getSubjectDetailCache = this.withFetchWithCache<z.output<typeof doubanSubjectDetailSchema>>(
+    async (key, signal) => {
       const resp = await this.http.get(`/subject/${key}`, { signal });
       return doubanSubjectDetailSchema.parse(resp.data);
     },
-  });
+    {
+      keyPrefix: "subject_detail",
+      max: 500,
+      ttl: 1000 * SECONDS_PER_DAY,
+    },
+  );
   getSubjectDetail(subjectId: string | number) {
-    return this.getSubjectDetailCache.fetch(subjectId.toString());
+    return this.getSubjectDetailCache.fetch(`${subjectId}`);
   }
   //#endregion
 
   //#region Subject Detail Desc
-  private getSubjectDetailDescCache = new LRUCache<string, Record<string, string>>({
-    max: 500,
-    ttl: 1000 * SECONDS_PER_DAY,
-    fetchMethod: async (key, _, { signal }) => {
+  private getSubjectDetailDescCache = this.withFetchWithCache<Record<string, string>>(
+    async (key, signal) => {
       const resp = await this.http.get<{ html: string }>(`/subject/${key}/desc`, { signal });
       const $ = cheerioLoad(resp.data.html);
       const info = Array.from($(".subject-desc table").find("tr")).map((el) => {
@@ -106,7 +144,12 @@ export class Douban {
       });
       return Object.fromEntries(info);
     },
-  });
+    {
+      keyPrefix: "subject_detail_desc",
+      max: 500,
+      ttl: 1000 * SECONDS_PER_DAY,
+    },
+  );
   getSubjectDetailDesc(subjectId: string | number) {
     return this.getSubjectDetailDescCache.fetch(subjectId.toString());
   }
@@ -150,7 +193,7 @@ export class Douban {
     }
     const resp = await this.http.get(`https://api.themoviedb.org/3/search/${type}`, {
       headers: {
-        Authorization: `Bearer ${this.cloudflareBindings?.TMDB_API_KEY || process.env.TMDB_API_KEY}`,
+        Authorization: `Bearer ${this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`,
       },
       params: {
         query,
