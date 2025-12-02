@@ -4,8 +4,10 @@ interface ManifestUrlRenderProps {
 
 export const ManifestUrlRender = (props: ManifestUrlRenderProps) => {
   return (
-    <code
-      className="rounded-md bg-neutral-100 px-2 py-1"
+    <textarea
+      className="field-sizing-content w-full rounded-md bg-neutral-100 px-2 py-1 text-center"
+      name="manifest-url"
+      readonly
       onClick={() => {
         navigator?.clipboard?.writeText(props.url).then(() => {
           alert("Copied to clipboard");
@@ -14,6 +16,6 @@ export const ManifestUrlRender = (props: ManifestUrlRenderProps) => {
       onKeyPress={() => {}}
     >
       {props.url}
-    </code>
+    </textarea>
   );
 };

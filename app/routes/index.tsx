@@ -8,14 +8,16 @@ export default createRoute((c) => {
   manifestUrl.search = "";
   manifestUrl.hash = "";
   return c.render(
-    <div className="flex h-screen flex-col items-center justify-center">
+    <div className="container mx-auto flex h-screen flex-col items-center justify-center px-8">
       <h1 className="mb-4 font-bold text-2xl">
         {pkg.description}
 
         <span className="ml-2 text-base text-neutral-500">v{pkg.version}</span>
       </h1>
 
-      <ManifestUrlRender url={manifestUrl.toString()} />
+      <div className="group flex w-full flex-col">
+        <ManifestUrlRender url={manifestUrl.toString()} />
+      </div>
     </div>,
   );
 });
