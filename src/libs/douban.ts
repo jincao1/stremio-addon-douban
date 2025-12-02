@@ -157,10 +157,14 @@ export class Douban {
     const doubanId = z.coerce.number().parse(resp.id?.split("/")?.pop());
     try {
       this.context.executionCtx.waitUntil(
-        this.db.insert(doubanMapping).values({ imdbId, doubanId }).onConflictDoUpdate({
-          target: doubanMapping.doubanId,
-          set: { imdbId },
-        }),
+        this.db
+          .insert(doubanMapping)
+          .values({ imdbId, doubanId })
+          .onConflictDoUpdate({
+            target: doubanMapping.doubanId,
+            set: { imdbId },
+            setWhere: or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated)),
+          }),
       );
     } catch (error) {}
     return doubanId;
