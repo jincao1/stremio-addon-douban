@@ -1,7 +1,7 @@
 import type { AddonBuilder, ManifestCatalog, MetaPreview } from "@stremio-addon/sdk";
 import { type Context, type Env, Hono } from "hono";
+import { api, DoubanAPI } from "@/libs/api";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
-import { Douban, douban } from "@/libs/douban";
 import { matchResourceRoute } from "@/libs/router";
 import { isForwardUserAgent } from "@/libs/utils";
 import { generateId } from "./utils";
@@ -35,11 +35,11 @@ catalogRouter.get("*", async (c) => {
     return c.notFound();
   }
 
-  douban.initialize(c);
+  api.initialize(c);
 
   // 获取豆瓣合集数据
   const skip = params.extra?.skip ?? c.req.query("skip") ?? 0;
-  const collectionData = await douban.getSubjectCollection(params.id, skip);
+  const collectionData = await api.doubanAPI.getSubjectCollection(params.id, skip);
   if (!collectionData) {
     return c.notFound();
   }
@@ -51,7 +51,7 @@ catalogRouter.get("*", async (c) => {
 
   const collectionMap = new Map(items.map((item) => [item.id, item]));
   const doubanIds = Array.from(collectionMap.keys());
-  const { mappingCache, missingIds } = await douban.fetchDoubanIdMapping(doubanIds);
+  const { mappingCache, missingIds } = await api.fetchIdMapping(doubanIds);
 
   const newMappings = await Promise.all(
     missingIds.map(async (doubanId) => {
@@ -59,7 +59,7 @@ catalogRouter.get("*", async (c) => {
       if (!item) {
         return null;
       }
-      return douban.findExternalId({
+      return api.findExternalId({
         doubanId,
         type: item.type,
         title: item.title,
@@ -75,7 +75,7 @@ catalogRouter.get("*", async (c) => {
   }
 
   // 后台异步写入数据库，不阻塞响应
-  c.executionCtx.waitUntil(douban.persistDoubanIdMapping(newMappings));
+  c.executionCtx.waitUntil(api.persistIdMapping(newMappings));
 
   const isInForward = isForwardUserAgent(c);
 
@@ -116,7 +116,7 @@ catalogRouter.get("*", async (c) => {
 export default catalogRouter;
 
 export const getCatalogs = async (c: Context<Env>) => {
-  douban.initialize(c);
+  api.initialize(c);
 
   const catalogs = await Promise.allSettled(
     collectionConfigs.map(async (catalog) => {
@@ -125,7 +125,7 @@ export const getCatalogs = async (c: Context<Env>) => {
         total: catalog.total === "fetch" ? 0 : catalog.total,
       };
       if (catalog.total === "fetch") {
-        const data = await douban.getSubjectCollection(catalog.id, 0);
+        const data = await api.doubanAPI.getSubjectCollection(catalog.id, 0);
         result.total = data?.total ?? 0;
       }
       if (result.total > 10) {
@@ -134,9 +134,9 @@ export const getCatalogs = async (c: Context<Env>) => {
           name: "skip",
           options: Array.from(
             {
-              length: Math.ceil(result.total / Douban.PAGE_SIZE),
+              length: Math.ceil(result.total / DoubanAPI.PAGE_SIZE),
             },
-            (_, i) => (i * Douban.PAGE_SIZE).toString(),
+            (_, i) => (i * DoubanAPI.PAGE_SIZE).toString(),
           ),
         });
       }

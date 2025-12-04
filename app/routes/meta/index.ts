@@ -1,10 +1,10 @@
 import type { MetaDetail, WithCache } from "@stremio-addon/sdk";
 import { eq, type SQL } from "drizzle-orm";
 import { type Env, Hono } from "hono";
-import { doubanMapping } from "../../db";
-import { douban } from "../../libs/douban";
-import { matchResourceRoute } from "../../libs/router";
-import { isForwardUserAgent } from "../../libs/utils";
+import { doubanMapping } from "@/db";
+import { api } from "@/libs/api";
+import { matchResourceRoute } from "@/libs/router";
+import { isForwardUserAgent } from "@/libs/utils";
 
 export const metaRouter = new Hono<Env>();
 
@@ -14,15 +14,15 @@ const idPrefixRegex = new RegExp(`^(${idPrefixes.join("|")})`);
 metaRouter.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
   if (!matched) {
-    return c.json({ error: "Not found" }, 404);
+    return c.notFound();
   }
   const metaId = params.id;
   if (!idPrefixRegex.test(metaId)) {
-    return c.json({ error: "Invalid ID" }, 400);
+    return c.notFound();
   }
 
-  douban.initialize(c);
-  const db = douban.db;
+  api.initialize(c);
+
   let doubanId: string | number | undefined;
   let imdbId: string | undefined | null;
   let tmdbId: string | number | undefined | null;
@@ -40,7 +40,7 @@ metaRouter.get("*", async (c) => {
   }
 
   if (queryCondition) {
-    const [row] = await db.select().from(doubanMapping).where(queryCondition);
+    const [row] = await api.db.select().from(doubanMapping).where(queryCondition);
     if (row) {
       doubanId ||= row.doubanId;
       imdbId ||= row.imdbId;
@@ -50,14 +50,14 @@ metaRouter.get("*", async (c) => {
 
   if (!doubanId && imdbId) {
     try {
-      doubanId = await douban.getDoubanIdByImdbId(imdbId);
+      doubanId = await api.doubanAPI.getIdByImdbId(imdbId);
     } catch (error) {}
   }
 
   if (!doubanId) {
-    return c.json({ error: "Not found" }, 404);
+    return c.notFound();
   }
-  const data = await douban.getSubjectDetail(doubanId);
+  const data = await api.doubanAPI.getSubjectDetail(doubanId);
   const meta: MetaDetail & { [key: string]: any } = {
     id: metaId,
     type: data.type === "tv" ? "series" : "movie",
