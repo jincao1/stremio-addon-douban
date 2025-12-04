@@ -4,7 +4,6 @@ import {
   showResponseSchema,
   Environment as TraktBaseUrl,
 } from "@trakt/api";
-import axios from "axios";
 import z from "zod";
 import { SECONDS_PER_DAY } from "../constants";
 import { BaseAPI } from "./base";
@@ -26,11 +25,8 @@ export class TraktAPI extends BaseAPI {
   constructor() {
     super({ baseURL: TraktBaseUrl.production });
     this.axios.interceptors.request.use((config) => {
-      const finalUri = axios.getUri(config);
-      if (finalUri.startsWith(TraktBaseUrl.production)) {
-        config.headers.set("trakt-api-version", "2");
-        config.headers.set("trakt-api-key", this.context.env.TRAKT_CLIENT_ID || process.env.TRAKT_CLIENT_ID);
-      }
+      config.headers.set("trakt-api-version", "2");
+      config.headers.set("trakt-api-key", this.context.env.TRAKT_CLIENT_ID || process.env.TRAKT_CLIENT_ID);
       return config;
     });
   }

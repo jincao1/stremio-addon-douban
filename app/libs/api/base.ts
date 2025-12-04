@@ -18,7 +18,14 @@ export class BaseAPI {
   protected axios: AxiosInstance;
 
   constructor(config?: CreateAxiosDefaults) {
-    this.axios = axios.create({ adapter: "fetch", ...config });
+    this.axios = axios.create({
+      adapter: "fetch",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        ...config?.headers,
+      },
+      ...config,
+    });
 
     this.axios.interceptors.request.use((config) => {
       const finalUri = axios.getUri(config);
