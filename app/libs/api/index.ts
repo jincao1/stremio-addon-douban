@@ -1,6 +1,7 @@
 import { inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { ExecutionContext } from "hono";
-import { type DoubanIdMapping, doubanMapping } from "@/db";
+import { z } from "zod/v4";
+import { type DoubanIdMapping, doubanMapping, doubanMappingSchema } from "@/db";
 import { BaseAPI } from "./base";
 import { DoubanAPI } from "./douban";
 import { TraktAPI } from "./trakt";
@@ -42,21 +43,33 @@ class API extends BaseAPI {
     return { mappingCache, missingIds };
   }
 
-  async persistIdMapping(mappings: (DoubanIdMapping | null)[]) {
-    const data = mappings.filter(
-      (item): item is DoubanIdMapping => !!item && !!(item.imdbId || item.tmdbId || item.traktId),
-    );
+  async persistIdMapping(mappings: (DoubanIdMapping | null)[], skipNil = true) {
+    const hasValidId = (item: DoubanIdMapping) => !!(item.imdbId || item.tmdbId || item.traktId);
+
+    const data = mappings.filter((item): item is DoubanIdMapping => {
+      const result = doubanMappingSchema.safeParse(item);
+      if (!result.success) {
+        console.warn("❌ Invalid douban id mapping", z.prettifyError(result.error));
+        return false;
+      }
+      if (skipNil && !hasValidId(result.data)) {
+        return false;
+      }
+      return true;
+    });
     if (data.length === 0) return;
-    console.log("🗄️ Updating douban id mapping", data);
+
+    console.log("🗄️ Updating douban id mapping, count:", data.length);
     await this.db
       .insert(doubanMapping)
       .values(data)
       .onConflictDoUpdate({
         target: doubanMapping.doubanId,
         set: {
-          imdbId: sql`COALESCE(${doubanMapping.imdbId}, excluded.imdb_id)`,
-          tmdbId: sql`COALESCE(${doubanMapping.tmdbId}, excluded.tmdb_id)`,
-          traktId: sql`COALESCE(${doubanMapping.traktId}, excluded.trakt_id)`,
+          // 优先使用新值，新值为空时保留现有值
+          imdbId: sql`COALESCE(excluded.imdb_id, ${doubanMapping.imdbId})`,
+          tmdbId: sql`COALESCE(excluded.tmdb_id, ${doubanMapping.tmdbId})`,
+          traktId: sql`COALESCE(excluded.trakt_id, ${doubanMapping.traktId})`,
         },
         setWhere: or(ne(doubanMapping.calibrated, 1), isNull(doubanMapping.calibrated)),
       });

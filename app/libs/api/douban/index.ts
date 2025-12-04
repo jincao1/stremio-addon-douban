@@ -1,7 +1,7 @@
 import axios from "axios";
 import { load as cheerioLoad } from "cheerio";
 import { isNull, ne, or } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { doubanMapping } from "@/db";
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from "../../constants";
 import { BaseAPI } from "../base";

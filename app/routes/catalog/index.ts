@@ -75,7 +75,7 @@ catalogRouter.get("*", async (c) => {
   }
 
   // 后台异步写入数据库，不阻塞响应
-  c.executionCtx.waitUntil(api.persistIdMapping(newMappings));
+  c.executionCtx.waitUntil(api.persistIdMapping(newMappings, false));
 
   const isInForward = isForwardUserAgent(c);
 
