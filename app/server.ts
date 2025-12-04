@@ -24,6 +24,18 @@ export default {
 
     let successCount = 0;
 
+    const formatIdMapping = (doubanId: number, ids?: Parameters<typeof api.traktAPI.formatIdsToIdMapping>[0]) => {
+      const mapping = api.traktAPI.formatIdsToIdMapping(ids);
+      if (mapping) {
+        return {
+          ...mapping,
+          doubanId,
+          calibrated: 1,
+        };
+      }
+      return null;
+    };
+
     for (const group of groups) {
       const results = await Promise.all(
         group.map<Promise<DoubanIdMapping | null>>(async (item) => {
@@ -31,29 +43,31 @@ export default {
           if (imdbId) {
             const data = await api.traktAPI.searchByImdbId(imdbId).catch(() => []);
             if (data.length === 1) {
-              const ids = api.traktAPI.getSearchResultField(data[0], "ids");
-              const mapping = api.traktAPI.formatIdsToIdMapping(ids);
-              if (mapping) {
-                return {
-                  ...mapping,
-                  doubanId,
-                  calibrated: 1,
-                };
-              }
+              return formatIdMapping(doubanId, api.traktAPI.getSearchResultField(data[0], "ids"));
             }
           }
           const detail = await api.doubanAPI.getSubjectDetail(doubanId);
           if (detail) {
             const results = await api.traktAPI.search(detail.type === "movie" ? "movie" : "show", detail.title);
             if (results.length === 1) {
-              const ids = api.traktAPI.getSearchResultField(results[0], "ids");
-              const mapping = api.traktAPI.formatIdsToIdMapping(ids);
-              if (mapping) {
-                return {
-                  ...mapping,
-                  doubanId,
-                  calibrated: 1,
-                };
+              return formatIdMapping(doubanId, api.traktAPI.getSearchResultField(results[0], "ids"));
+            }
+
+            // 尝试比对一下原始标题，如果只有一个结果，则直接返回
+            const originalTitleMatches = results.filter(
+              (item) => api.traktAPI.getSearchResultField(item, "original_title") === detail.original_title,
+            );
+            if (originalTitleMatches.length === 1) {
+              return formatIdMapping(doubanId, api.traktAPI.getSearchResultField(originalTitleMatches[0], "ids"));
+            }
+
+            // 电影尝试比对一下年份，如果只有一个结果，则直接返回
+            if (detail.type === "movie") {
+              const yearsMatches = results.filter(
+                (item) => api.traktAPI.getSearchResultField(item, "year")?.toString() === detail.year?.toString(),
+              );
+              if (yearsMatches.length === 1) {
+                return formatIdMapping(doubanId, api.traktAPI.getSearchResultField(yearsMatches[0], "ids"));
               }
             }
           }

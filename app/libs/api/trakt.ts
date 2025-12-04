@@ -36,7 +36,7 @@ export class TraktAPI extends BaseAPI {
     });
   }
 
-  getSearchResultField<T extends "ids" | "title" | "original_title">(data: SearchResultResponse, field: T) {
+  getSearchResultField<T extends "ids" | "title" | "original_title" | "year">(data: SearchResultResponse, field: T) {
     if (data.type === "show" || data.type === "episode") {
       return data.show?.[field];
     }
