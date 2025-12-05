@@ -243,7 +243,13 @@ export default createRoute(async (c) => {
                             </TableCell>
                             <TableCell>
                               {ids?.tmdb ? (
-                                <Badge variant="info">{ids.tmdb}</Badge>
+                                <a
+                                  href={`https://www.themoviedb.org/${subject.type}/${ids.tmdb}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Badge variant="info">{ids.tmdb}</Badge>
+                                </a>
                               ) : (
                                 <span className="text-zinc-400">-</span>
                               )}
