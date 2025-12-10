@@ -9,6 +9,11 @@ const importUrls = [
     url: (manifestUrl: string) => manifestUrl.replace(/^https?:\/\//, "stremio://"),
   },
   {
+    name: "Stremio (Web)",
+    icon: "https://www.stremio.com/website/ms/large.png",
+    url: (manifestUrl: string) => `https://web.stremio.com/#/addons?addon=${manifestUrl}`,
+  },
+  {
     name: "Forward",
     icon: "https://forward.inch.red/_astro/icon.DSrm6bPi_1hgmkn.png",
     url: (manifestUrl: string) => {

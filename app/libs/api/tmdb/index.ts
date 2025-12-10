@@ -1,3 +1,4 @@
+import { SECONDS_PER_DAY } from "@/libs/constants";
 import { BaseAPI } from "../base";
 import { tmdbSearchResultSchema } from "./schema";
 
@@ -16,5 +17,14 @@ export class TmdbAPI extends BaseAPI {
       params,
     });
     return tmdbSearchResultSchema.parse(resp);
+  }
+
+  async searchById(type: "movie" | "tv", id: number) {
+    const resp = await this.request({
+      url: `/${type}/${id}`,
+      cache: { key: `tmdb:search:${type}Id:${id}`, ttl: 1000 * SECONDS_PER_DAY },
+    });
+
+    return tmdbSearchResultSchema.parse({ results: [resp] });
   }
 }
