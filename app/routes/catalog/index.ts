@@ -79,28 +79,15 @@ catalogRouter.get("*", async (c) => {
 
   const isInForward = isForwardUserAgent(c);
 
-  // Hack to fetch TMDB Posters. Stremio passes "Referer" header, which Douban rejects.
-  // This results in no posters loaded. At least this way I'll get some posters.
-  for (const item of items) {
-    const mapping = mappingCache.get(item.id);
-    const { tmdbId, traktId } = mapping ?? {};
-    if (tmdbId) {
-      const res = await api.tmdbAPI
-        .searchById(item.type === "tv" ? "tv" : "movie", tmdbId)
-        .catch();
-      item.cover = res?.results[0].poster_path ?? item.cover;
-    }
-  }
-
   // 构建响应
   const metas = items.map((item) => {
     const mapping = mappingCache.get(item.id);
-    const { imdbId, tmdbId } = mapping ?? {};
+    const { imdbId, tmdbId, altPoster } = mapping ?? {};
     const result: MetaPreview & { [key: string]: any } = {
       id: generateId(item.id, mapping),
       name: item.title,
       type: item.type === "tv" ? "series" : "movie",
-      poster: item.cover ?? "",
+      poster: altPoster ?? item.cover ?? "",
       description: item.description ?? undefined,
       background: item.photos?.[0],
     };
