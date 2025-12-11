@@ -38,9 +38,9 @@ class API extends BaseAPI {
     const rows = await this.db.select().from(doubanMapping).where(inArray(doubanMapping.doubanId, doubanIds));
     const mappingCache = new Map<number, Partial<DoubanIdMapping>>();
     const mappedIds = new Set<number>();
-    for (const { doubanId, imdbId, tmdbId, traktId, altPoster } of rows) {
+    for (const { doubanId, imdbId, tmdbId, traktId, poster, name } of rows) {
       if (imdbId || tmdbId || traktId) {
-        mappingCache.set(doubanId, { imdbId, tmdbId, traktId, altPoster });
+        mappingCache.set(doubanId, { imdbId, tmdbId, traktId, poster, name });
         mappedIds.add(doubanId);
       }
     }
@@ -89,7 +89,7 @@ class API extends BaseAPI {
       imdbId: null,
       tmdbId: null,
       traktId: null,
-      altPoster: null,
+      name: params.title,
     };
 
     const assignTraktIds = (ids?: Parameters<typeof this.traktAPI.formatIdsToIdMapping>[0]) => {
@@ -114,15 +114,6 @@ class API extends BaseAPI {
     if (!result.imdbId) {
       const traktIds = await this.findIdWithTraktSearchTitle(params).catch(() => null);
       assignTraktIds(traktIds);
-    }
-
-    if (result.tmdbId) {
-      // Hack to fetch TMDB Posters. Stremio passes "Referer" header, which Douban rejects.
-      // This results in no posters loaded. At least this way I'll get some posters.
-      const res = await api.tmdbAPI
-        .searchById(params.type === "tv" ? "tv" : "movie", result.tmdbId)
-        .catch();
-      result.altPoster = res?.results[0].poster_path ?? null;
     }
 
     return result;

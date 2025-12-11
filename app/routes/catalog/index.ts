@@ -59,11 +59,15 @@ catalogRouter.get("*", async (c) => {
       if (!item) {
         return null;
       }
-      return api.findExternalId({
+
+      const result = await api.findExternalId({
         doubanId,
         type: item.type,
         title: item.title,
       });
+      // save my poster.
+      result.poster = item.cover;
+      return result;
     }),
   );
 
@@ -82,12 +86,13 @@ catalogRouter.get("*", async (c) => {
   // 构建响应
   const metas = items.map((item) => {
     const mapping = mappingCache.get(item.id);
-    const { imdbId, tmdbId, altPoster } = mapping ?? {};
+    const { imdbId, tmdbId } = mapping ?? {};
+    const posterUrl = item.cover ? `${new URL(c.req.url).origin}/poster/${item.id}` : "";
     const result: MetaPreview & { [key: string]: any } = {
       id: generateId(item.id, mapping),
       name: item.title,
       type: item.type === "tv" ? "series" : "movie",
-      poster: altPoster ?? item.cover ?? "",
+      poster: posterUrl,
       description: item.description ?? undefined,
       background: item.photos?.[0],
     };
