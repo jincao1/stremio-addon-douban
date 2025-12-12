@@ -8,7 +8,7 @@ export const doubanMapping = sqliteTable("douban_mapping", {
   imdbId: text("imdb_id"),
   traktId: int("trakt_id"),
   name: text("name"),
-  poster: text("alt_poster"),
+  poster: text("poster"),
   calibrated: int("calibrated", { mode: "boolean" }).default(false),
 
   createdAt: int("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),

@@ -10,9 +10,10 @@ export default createRoute(async (c) => {
     if (!doubanId) {
         return c.notFound();
     }
-
+    const keep_size = c.req.query("keep_size");
     // change poster size URL from medium to small to save some bandwidth.
     const changePosterSize = (c: string) => {
+        if (keep_size === "true") return c; // don't change if keeping size
         return c.replace("m_ratio_poster", "s_ratio_poster");
     };
 

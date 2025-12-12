@@ -23,12 +23,14 @@ const doubanSubjectCollectionItemSchema = z
     photos: z.array(z.string()).nullish(),
     description: z.string().nullish(),
     comment: z.string().nullish(),
+    directors: z.array(z.string()).nullish(),
+    actors: z.array(z.string()).nullish(),
   })
   .transform((v) => ({
     ...v,
     cover: v.cover?.url ?? v.cover_url ?? v.pic?.large ?? v.pic?.normal,
     year: v.year ?? v.card_subtitle?.split("/")?.[0].trim(),
-    description: v.description || v.comment,
+    description: v.description || v.card_subtitle
   }));
 
 export const doubanSubjectCollectionSchema = z.object({

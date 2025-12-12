@@ -16,7 +16,11 @@ export default createRoute(async (c) => {
     types: ["movie", "series"],
     resources: [
       "catalog",
-      // "meta"
+      {
+        "name": "meta",
+        "types": ["movie", "series"],
+        "idPrefixes": ["douban:"]
+      }
     ],
     catalogs,
     // idPrefixes,

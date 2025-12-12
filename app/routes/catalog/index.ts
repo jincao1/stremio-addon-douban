@@ -3,7 +3,7 @@ import { type Context, type Env, Hono } from "hono";
 import { api, DoubanAPI } from "@/libs/api";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent } from "@/libs/utils";
+import { isForwardUserAgent, makePosterUrl } from "@/libs/utils";
 import { generateId } from "./utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
@@ -56,9 +56,7 @@ catalogRouter.get("*", async (c) => {
   const newMappings = await Promise.all(
     missingIds.map(async (doubanId) => {
       const item = collectionMap.get(doubanId);
-      if (!item) {
-        return null;
-      }
+      if (!item) return null;
 
       const result = await api.findExternalId({
         doubanId,
@@ -87,7 +85,7 @@ catalogRouter.get("*", async (c) => {
   const metas = items.map((item) => {
     const mapping = mappingCache.get(item.id);
     const { imdbId, tmdbId } = mapping ?? {};
-    const posterUrl = item.cover ? `${new URL(c.req.url).origin}/poster/${item.id}` : "";
+    const posterUrl = item.cover ? makePosterUrl(c, item.id) : "";
     const result: MetaPreview & { [key: string]: any } = {
       id: generateId(item.id, mapping),
       name: item.title,
@@ -95,6 +93,11 @@ catalogRouter.get("*", async (c) => {
       poster: posterUrl,
       description: item.description ?? undefined,
       background: item.photos?.[0],
+      links: [
+        ...(item.directors ?? []).map((name) => ({ name: name, category: "director", url: `stremio:///search?search=${name}` })), // url is required.
+        ...(item.actors ?? []).map((name) => ({ name: name, category: "cast", url: `stremio:///search?search=${name}` })), // url is required.
+      ],
+      releaseInfo: item.year
     };
     if (imdbId) {
       result.imdb_id = imdbId;
