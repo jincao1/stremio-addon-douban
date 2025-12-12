@@ -58,14 +58,11 @@ catalogRouter.get("*", async (c) => {
       const item = collectionMap.get(doubanId);
       if (!item) return null;
 
-      const result = await api.findExternalId({
+      return await api.findExternalId({
         doubanId,
         type: item.type,
         title: item.title,
       });
-      // save my poster.
-      result.poster = item.cover;
-      return result;
     }),
   );
 
@@ -85,7 +82,7 @@ catalogRouter.get("*", async (c) => {
   const metas = items.map((item) => {
     const mapping = mappingCache.get(item.id);
     const { imdbId, tmdbId } = mapping ?? {};
-    const posterUrl = item.cover ? makePosterUrl(c, item.id) : "";
+    const posterUrl = item.cover ? makePosterUrl(item.cover) : "";
     const result: MetaPreview & { [key: string]: any } = {
       id: generateId(item.id, mapping),
       name: item.title,

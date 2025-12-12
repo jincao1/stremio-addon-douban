@@ -5,6 +5,6 @@ export const isForwardUserAgent = (c: Context) => {
   return userAgent?.split(" ").some((item) => item.startsWith("forward/"));
 };
 
-export const makePosterUrl = (c: Context, doubanId: string | number) => {
-  return `${new URL(c.req.url).origin}/poster/${doubanId}`;
+export const makePosterUrl = (url: string | undefined) => {
+  return url ? `https://serveproxy.com/?url=${url}` : undefined;
 }

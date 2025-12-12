@@ -6,6 +6,8 @@ import { createRoute } from "honox/factory";
 // Proxy the request to the poster. Douban posters will not load if we do it this way until I find a better solution.
 // Douban rejects direct link to Stremio because of Referer header is set - so images don't load.
 export default createRoute(async (c) => {
+    return c.notFound();
+/* deprecating for now.
     const doubanId = c.req.param("doubanId");
     if (!doubanId) {
         return c.notFound();
@@ -43,5 +45,6 @@ export default createRoute(async (c) => {
     }
 
     return c.notFound();
+*/
 });
 

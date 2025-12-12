@@ -38,9 +38,9 @@ class API extends BaseAPI {
     const rows = await this.db.select().from(doubanMapping).where(inArray(doubanMapping.doubanId, doubanIds));
     const mappingCache = new Map<number, Partial<DoubanIdMapping>>();
     const mappedIds = new Set<number>();
-    for (const { doubanId, imdbId, tmdbId, traktId, poster, name } of rows) {
+    for (const { doubanId, imdbId, tmdbId, traktId, name } of rows) {
       if (imdbId || tmdbId || traktId) {
-        mappingCache.set(doubanId, { imdbId, tmdbId, traktId, poster, name });
+        mappingCache.set(doubanId, { imdbId, tmdbId, traktId, name });
         mappedIds.add(doubanId);
       }
     }

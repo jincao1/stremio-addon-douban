@@ -58,7 +58,7 @@ metaRouter.get("*", async (c) => {
     return c.notFound();
   }
   const data = await api.doubanAPI.getSubjectDetail(doubanId);
-  const poster = data.cover_url ? `${makePosterUrl(c, doubanId)}?keep_size=true` : "";
+  const poster = makePosterUrl(data.cover_url || data.pic?.large || data.pic?.normal || undefined);
   const meta: MetaDetail & { [key: string]: any } = {
     id: metaId,
     type: data.type === "tv" ? "series" : "movie",
@@ -74,6 +74,7 @@ metaRouter.get("*", async (c) => {
     language: data.languages?.join(" / "),
     country: data.countries?.join(" / "),
     awards: data.honor_infos?.map((item) => item.title).join(" / "),
+    releaseInfo: data.year ?? undefined
   };
   meta.behaviorHints ||= {};
   const isInForward = isForwardUserAgent(c);
