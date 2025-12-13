@@ -70,6 +70,11 @@ metaRouter.get("*", async (c) => {
     links: [
       ...(data.directors ?? []).map((item) => ({ name: item.name, category: "director", url: `stremio:///search?search=${item.name}` })), // url is required.
       ...(data.actors ?? []).map((item) => ({ name: item.name, category: "cast", url: `stremio:///search?search=${item.name}` })), // url is required.
+      {
+        name: `Douban Rating: ${data.rating ?? "NOT RATED"}`,
+        category: "douban",
+        url: data.url ?? "",
+      }
     ],
     language: data.languages?.join(" / "),
     country: data.countries?.join(" / "),

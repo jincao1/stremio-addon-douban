@@ -93,6 +93,11 @@ catalogRouter.get("*", async (c) => {
       links: [
         ...(item.directors ?? []).map((name) => ({ name: name, category: "director", url: `stremio:///search?search=${name}` })), // url is required.
         ...(item.actors ?? []).map((name) => ({ name: name, category: "cast", url: `stremio:///search?search=${name}` })), // url is required.
+        {
+          name: `Douban Rating: ${item.rating ?? "NOT RATED"}`,
+          category: "douban",
+          url: item.url ?? "",
+        }
       ],
       releaseInfo: item.year
     };
