@@ -48,6 +48,8 @@ const doubanSubjectCollectionItemSchema = z
     photos: z.array(z.string()).nullish(),
     description: z.string().nullish(),
     comment: z.string().nullish(),
+    directors: z.array(z.string()).nullish(),
+    actors: z.array(z.string()).nullish(),
     rating: z
       .object({
         value: z.coerce.number().nullish(),
@@ -59,7 +61,7 @@ const doubanSubjectCollectionItemSchema = z
     ...v,
     cover: v.cover?.url ?? v.cover_url ?? v.pic?.large ?? v.pic?.normal,
     year: v.year ?? v.card_subtitle?.split("/")?.[0].trim(),
-    description: v.description || v.comment,
+    description: v.description || v.card_subtitle,
   }));
 
 export const doubanSubjectCollectionSchema = z.object({
@@ -117,6 +119,12 @@ export const doubanSubjectDetailSchema = z.object({
     .nullish(),
   languages: z.array(z.string()).nullish(),
   pubdate: z.array(z.string()).nullish(),
+  rating: z
+    .object({
+      value: z.coerce.number().nullish(),
+    })
+    .nullish(),
+  url: z.string().nullish(),
 });
 
 export const tmdbSearchResultSchema = z.object({

@@ -10,3 +10,7 @@ export const isForwardUserAgent = (c: Context) => {
   const userAgent = c.req.header("User-Agent");
   return userAgent?.split(" ").some((item) => item.startsWith("forward/"));
 };
+
+export const proxyImageUrl = (url: string | undefined) => {
+  return url ? `https://serveproxy.com/?url=${url}` : undefined;
+}

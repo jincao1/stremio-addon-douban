@@ -10,7 +10,7 @@
   "workers_dev": true,
   "routes": [
     {
-      "pattern": "stremio-addon-douban.baran.wang",
+      "pattern": "stremio-addon-douban.jcao.ca",
       "custom_domain": true
     }
   ],
@@ -18,13 +18,13 @@
     {
       "binding": "STREMIO_ADDON_DOUBAN",
       "database_name": "stremio-addon-douban",
-      "database_id": "543ed1d5-3da8-4ed1-8084-25084af52953",
+      "database_id": "3bdfae31-e997-4a22-8775-4d351cfbbc16",
       "remote": true
     }
   ],
   "kv_namespaces": [{
     "binding": "KV",
-    "id": "8274189206e84436bf11f861debd918a"
+    "id": "4a8c807a09c14283a70b119d92763459"
   }],
   "ratelimits": [
     {

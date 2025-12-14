@@ -66,7 +66,7 @@ configureRoute.get("/", (c) => {
             </div>
             <div className="flex items-center max-sm:flex-col max-sm:items-start">
               <Button variant="ghost" size="sm" asChild>
-                <a href="https://github.com/baranwang/stremio-addon-douban" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/jincao1/stremio-addon-douban" target="_blank" rel="noopener noreferrer">
                   <Github />
                   <span>GitHub</span>
                 </a>

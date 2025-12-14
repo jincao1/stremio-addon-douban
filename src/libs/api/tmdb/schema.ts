@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-const tmdbImageSchema = z.string().transform((v) => (v ? `https://image.tmdb.org/t/p/original${v}` : null));
+const tmdbImageSchema = z.string().nullable().transform((v) => (v ? `https://image.tmdb.org/t/p/original${v}` : null));
 
 const tmdbSearchResultItemBaseSchema = z.object({
   id: z.int(),

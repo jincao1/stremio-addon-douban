@@ -4,7 +4,7 @@ import { type Env, Hono } from "hono";
 import { doubanMapping } from "@/db";
 import { api } from "@/libs/api";
 import { matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent } from "@/libs/utils";
+import { isForwardUserAgent, proxyImageUrl } from "@/libs/utils";
 
 export const metaRoute = new Hono<Env>();
 
@@ -49,27 +49,31 @@ metaRoute.get("*", async (c) => {
   if (!doubanId && imdbId) {
     try {
       doubanId = await api.doubanAPI.getIdByImdbId(imdbId);
-    } catch (error) {}
+    } catch (error) { }
   }
 
   if (!doubanId) {
     return c.notFound();
   }
   const data = await api.doubanAPI.getSubjectDetail(doubanId);
+  const poster = proxyImageUrl(data.cover_url || data.pic?.large || data.pic?.normal || undefined);
   const meta: MetaDetail & { [key: string]: any } = {
     id: metaId,
     type: data.type === "tv" ? "series" : "movie",
     name: data.title,
-    poster: data.cover_url || data.pic?.large || data.pic?.normal || "",
+    poster: poster,
+    background: poster,
     description: data.intro ?? undefined,
     genres: data.genres ?? undefined,
     links: [
-      ...(data.directors ?? []).map((item) => ({ name: item.name, category: "director", url: "" })),
-      ...(data.actors ?? []).map((item) => ({ name: item.name, category: "actor", url: "" })),
+      ...(data.directors ?? []).map((item) => ({ name: item.name, category: "director", url: `stremio:///search?search=${item.name}` })), // url is required.
+      ...(data.actors ?? []).map((item) => ({ name: item.name, category: "cast", url: `stremio:///search?search=${item.name}` })), // url is required.
+      { name: `豆瓣评分：${data.rating?.value ?? "N/A"}`, category: "douban", url: data.url ?? "" },
     ],
     language: data.languages?.join(" / "),
     country: data.countries?.join(" / "),
     awards: data.honor_infos?.map((item) => item.title).join(" / "),
+    releaseInfo: data.year ?? undefined
   };
   meta.behaviorHints ||= {};
   const isInForward = isForwardUserAgent(c);

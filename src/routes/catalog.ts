@@ -4,7 +4,7 @@ import { api } from "@/libs/api";
 import { generateId } from "@/libs/catalog";
 import { collectionConfigMap, SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent } from "@/libs/utils";
+import { isForwardUserAgent, proxyImageUrl } from "@/libs/utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
@@ -78,10 +78,14 @@ catalogRoute.get("*", async (c) => {
       id: generateId(item.id, mapping),
       name: item.title,
       type: item.type === "tv" ? "series" : "movie",
-      poster: item.cover ?? "",
+      poster: proxyImageUrl(item.cover ?? ""),
       description: item.description ?? undefined,
-      background: item.photos?.[0],
-      links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }],
+      background: proxyImageUrl(item.photos?.[0]),
+      links: [
+        ...(item.directors ?? []).map((item) => ({ name: item, category: "director", url: `stremio:///search?search=${item}` })), // url is required.
+        ...(item.actors ?? []).map((item) => ({ name: item, category: "cast", url: `stremio:///search?search=${item}` })), // url is required.
+        { name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }
+      ],
     };
     if (imdbId) {
       result.imdb_id = imdbId;
