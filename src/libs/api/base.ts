@@ -1,11 +1,10 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type CreateAxiosDefaults } from "axios";
 import { drizzle } from "drizzle-orm/d1";
-import type { Env } from "hono";
-import { getContext } from "hono/context-storage";
 import { doubanMapping } from "@/db";
+import { getContext } from "../middleware";
 export class BaseAPI {
   protected get context() {
-    return getContext<Env>();
+    return getContext();
   }
 
   protected axios: AxiosInstance;
