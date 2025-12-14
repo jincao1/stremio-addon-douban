@@ -1,6 +1,6 @@
 import { reactRenderer } from "@hono/react-renderer";
 import { type Env, Hono } from "hono";
-import { Github, Heart } from "lucide-react";
+import { CoffeeIcon, Github, Heart } from "lucide-react";
 import { Link, Script, ViteClient } from "vite-ssr-components/react";
 import pkg from "@/../package.json" with { type: "json" };
 import { Configure, type ConfigureProps } from "@/components/configure";
@@ -64,6 +64,7 @@ configureRoute.get("/", (c) => {
               <h1 className="text-balance font-bold text-xl tracking-tight">{pkg.description}</h1>
               <p className="text-muted-foreground text-sm">选择要显示的目录，生成你的专属配置</p>
             </div>
+
             <div className="flex items-center max-sm:flex-col max-sm:items-start">
               <Button variant="ghost" size="sm" asChild>
                 <a href="https://github.com/jincao1/stremio-addon-douban" target="_blank" rel="noopener noreferrer">
@@ -71,12 +72,24 @@ configureRoute.get("/", (c) => {
                   <span>GitHub</span>
                 </a>
               </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://afdian.com/a/baran" target="_blank" rel="noopener noreferrer">
-                  <Heart />
-                  <span>捐赠</span>
-                </a>
-              </Button>
+            </div>
+            <div className="flex flex-col items-end max-sm:items-start">
+              <div className="flex items-center max-sm:flex-col max-sm:items-start">
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="https://afdian.com/a/baran" target="_blank" rel="noopener noreferrer">
+                    <Heart />
+                    <span>捐赠 - Baran</span>
+                  </a>
+                </Button>
+              </div>
+              <div className="flex items-center max-sm:flex-col max-sm:items-start">
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="https://buymeacoffee.com/jcao" target="_blank" rel="noopener noreferrer">
+                    <CoffeeIcon />
+                    <span>捐赠 - JC</span>
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         </header>
