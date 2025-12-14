@@ -29,7 +29,7 @@ const doubanSubjectCollectionItemSchema = z
       max: z.number(),
       value: z.number()
     }).nullish(),
-    url: z.string(),
+    url: z.string().nullish(),
   })
   .transform((v) => ({
     ...v,
@@ -98,7 +98,7 @@ export const doubanSubjectDetailSchema = z.object({
     max: z.number(),
     value: z.number()
   }).nullish(),
-  url: z.string(),
+  url: z.string().nullish(),
 }).transform((v) => ({
   ...v,
   rating: v.rating ? `${v.rating.value}/${v.rating.max}` : undefined,
