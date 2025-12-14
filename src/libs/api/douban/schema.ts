@@ -25,7 +25,7 @@ const doubanSubjectCollectionItemSchema = z
     comment: z.string().nullish(),
     rating: z
       .object({
-        value: z.string().nullish(),
+        value: z.coerce.number().nullish(),
       })
       .nullish(),
     url: z.string().nullish(),
