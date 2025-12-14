@@ -1,28 +1,12 @@
 import type { AddonBuilder, ManifestCatalog, MetaPreview } from "@stremio-addon/sdk";
 import { type Context, type Env, Hono } from "hono";
-import { api, DoubanAPI } from "@/libs/api";
-import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
+import { api } from "@/libs/api";
+import { collectionConfigs, SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { matchResourceRoute } from "@/libs/router";
 import { isForwardUserAgent } from "@/libs/utils";
 import { generateId } from "./utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
-
-const collectionConfigs: Array<ManifestCatalog & { total: number | "fetch" }> = [
-  { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie", total: "fetch" },
-  { id: "tv_hot", name: "豆瓣热播剧集", type: "series", total: "fetch" },
-  { id: "show_hot", name: "豆瓣热播综艺", type: "series", total: "fetch" },
-  { id: "tv_animation", name: "豆瓣热门动画", type: "series", total: "fetch" },
-  { id: "movie_showing", name: "豆瓣影院热映", type: "movie", total: "fetch" },
-  { id: "movie_real_time_hotest", name: "豆瓣实时热门电影", type: "movie", total: 10 },
-  { id: "tv_real_time_hotest", name: "豆瓣实时热门电视", type: "series", total: 10 },
-  { id: "movie_top250", name: "豆瓣电影 Top250", type: "movie", total: 250 },
-  { id: "movie_weekly_best", name: "豆瓣一周口碑电影榜", type: "movie", total: 10 },
-  { id: "tv_chinese_best_weekly", name: "豆瓣华语口碑剧集榜", type: "series", total: 10 },
-  { id: "tv_global_best_weekly", name: "豆瓣全球口碑剧集榜", type: "series", total: 10 },
-  { id: "show_chinese_best_weekly", name: "豆瓣华语口碑综艺榜", type: "series", total: 10 },
-  { id: "show_global_best_weekly", name: "豆瓣全球口碑综艺榜", type: "series", total: 10 },
-];
 
 const collectionIds = collectionConfigs.map((config) => config.id);
 
@@ -38,8 +22,15 @@ catalogRouter.get("*", async (c) => {
   api.initialize(c.env, c.executionCtx);
 
   // 获取豆瓣合集数据
+  let collectionId = params.id;
+  if (params.id === "movie_rank_list") {
+    collectionId = params.extra?.genre || "film_genre_27";
+  }
+  if (params.id === "tv_rank_list") {
+    collectionId = params.extra?.genre || "EC74443FY";
+  }
   const skip = params.extra?.skip ?? c.req.query("skip") ?? 0;
-  const collectionData = await api.doubanAPI.getSubjectCollection(params.id, skip);
+  const collectionData = await api.doubanAPI.getSubjectCollection(collectionId, skip);
   if (!collectionData) {
     return c.notFound();
   }
@@ -118,30 +109,10 @@ export default catalogRouter;
 export const getCatalogs = async (c: Context<Env>) => {
   api.initialize(c.env, c.executionCtx);
 
-  const catalogs = await Promise.allSettled(
-    collectionConfigs.map(async (catalog) => {
-      const result: ManifestCatalog & { total: number } = {
-        ...catalog,
-        total: catalog.total === "fetch" ? 0 : catalog.total,
-      };
-      if (catalog.total === "fetch") {
-        const data = await api.doubanAPI.getSubjectCollection(catalog.id, 0);
-        result.total = data?.total ?? 0;
-      }
-      if (result.total > 10) {
-        result.extra ??= [];
-        result.extra.push({
-          name: "skip",
-          options: Array.from(
-            {
-              length: Math.ceil(result.total / DoubanAPI.PAGE_SIZE),
-            },
-            (_, i) => (i * DoubanAPI.PAGE_SIZE).toString(),
-          ),
-        });
-      }
-      return result;
-    }),
-  );
-  return catalogs.filter((v) => v.status === "fulfilled").map((v) => v.value);
+  return collectionConfigs.map((item) => {
+    const result: ManifestCatalog = { ...item };
+    result.extra ||= [];
+    result.extra.push({ name: "skip" });
+    return result;
+  });
 };
