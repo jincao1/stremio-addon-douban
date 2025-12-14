@@ -1,11 +1,20 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { Context, Env } from "hono";
+import type { Env } from "hono";
 import { createMiddleware } from "hono/factory";
 
-const asyncLocalStorage = new AsyncLocalStorage<Context<Env>>();
+export const asyncLocalStorage = new AsyncLocalStorage<{
+  env: CloudflareBindings;
+  ctx: ExecutionContext;
+}>();
 
 export const contextStorage = createMiddleware<Env>(async (c, next) => {
-  await asyncLocalStorage.run(c, next);
+  await asyncLocalStorage.run(
+    {
+      env: c.env,
+      ctx: c.executionCtx as ExecutionContext,
+    },
+    next,
+  );
 });
 
 export const tryGetContext = () => {

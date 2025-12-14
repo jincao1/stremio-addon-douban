@@ -71,7 +71,7 @@ export class BaseAPI {
               "Cache-Control": `public, max-age=${cacheConfig.ttl / 1000}, s-maxage=${cacheConfig.ttl / 1000}`,
             },
           });
-          this.context.executionCtx.waitUntil(cache.put(cacheKey, response));
+          this.context.ctx.waitUntil(cache.put(cacheKey, response));
         }
 
         return respData;

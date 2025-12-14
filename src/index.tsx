@@ -5,7 +5,7 @@ import { logger } from "hono/logger";
 import type { z } from "zod/v4";
 import { type DoubanIdMapping, doubanMapping } from "@/db";
 import { api, type doubanSubjectDetailSchema } from "@/libs/api";
-import { contextStorage, rateLimit } from "./libs/middleware";
+import { asyncLocalStorage, contextStorage, rateLimit } from "./libs/middleware";
 import { catalogRoute } from "./routes/catalog";
 import { configureRoute } from "./routes/configure";
 import { dashRoute } from "./routes/dash";
@@ -35,6 +35,13 @@ export default {
   fetch: app.fetch,
 
   async scheduled(_controller: ScheduledController, env: CloudflareBindings, ctx: ExecutionContext) {
+    asyncLocalStorage.run(
+      {
+        env,
+        ctx,
+      },
+      () => {},
+    );
     const data = await api.db
       .select()
       .from(doubanMapping)

@@ -73,9 +73,9 @@ export class DoubanAPI extends BaseAPI {
     for (const tab of tabs) {
       const cid = tab.items?.[0].id;
       if (cid) {
-        this.context.executionCtx.waitUntil(
+        this.context.ctx.waitUntil(
           this.context.env.KV.put(generateCacheKey(cid), JSON.stringify(tab), {
-            expiration: 1000 * SECONDS_PER_WEEK,
+            expirationTtl: SECONDS_PER_WEEK,
           }),
         );
       }
@@ -146,7 +146,7 @@ export class DoubanAPI extends BaseAPI {
     });
     const doubanId = z.coerce.number().parse(resp.id?.split("/")?.pop());
     try {
-      this.context.executionCtx.waitUntil(
+      this.context.ctx.waitUntil(
         this.db
           .insert(doubanMapping)
           .values({ imdbId, doubanId })
