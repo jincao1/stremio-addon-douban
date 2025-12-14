@@ -71,19 +71,19 @@ export class DoubanAPI extends BaseAPI {
       return null;
     }
 
-    this.context.executionCtx.waitUntil(
-      Promise.all(
-        tabs.map((tab) => {
-          const cid = tab.items?.[0].id;
-          if (!cid) {
-            return null;
-          }
-          return this.context.env.KV.put(generateCacheKey(cid), JSON.stringify(tab), {
-            expiration: 1000 * SECONDS_PER_WEEK,
-          });
-        }),
-      ),
-    );
+    // this.context.executionCtx.waitUntil(
+    //   Promise.all(
+    //     tabs.map((tab) => {
+    //       const cid = tab.items?.[0].id;
+    //       if (!cid) {
+    //         return null;
+    //       }
+    //       return this.context.env.KV.put(generateCacheKey(cid), JSON.stringify(tab), {
+    //         expiration: 1000 * SECONDS_PER_WEEK,
+    //       });
+    //     }),
+    //   ),
+    // );
 
     const category = tabs.find((tab) => tab.items?.find((item) => item.current));
     if (!category) {
