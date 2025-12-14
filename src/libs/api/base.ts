@@ -3,7 +3,6 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Env } from "hono";
 import { getContext } from "hono/context-storage";
 import { doubanMapping } from "@/db";
-
 export class BaseAPI {
   protected get context() {
     return getContext<Env>();
@@ -41,7 +40,7 @@ export class BaseAPI {
     const cacheConfig = config.cache;
     const requestKey = cacheConfig?.key;
 
-    const cache = caches.default;
+    const cache = await caches.open("cache");
     const cacheKey = new Request(`https://cache.internal/${requestKey}`);
 
     // 1. 检查持久化缓存

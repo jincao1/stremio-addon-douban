@@ -1,5 +1,5 @@
 import { Check, Copy, Film, Tv } from "lucide-react";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import {
   Item,
   ItemActions,
