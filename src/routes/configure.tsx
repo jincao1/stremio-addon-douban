@@ -6,7 +6,7 @@ import pkg from "@/../package.json" with { type: "json" };
 import { Configure, type ConfigureProps } from "@/components/configure";
 import { Button } from "@/components/ui/button";
 import { decodeConfig, encodeConfig } from "@/libs/config";
-import { DEFAULT_COLLECTION_IDS } from "@/libs/constants";
+import { ALL_COLLECTION_IDS, DEFAULT_COLLECTION_IDS } from "@/libs/constants";
 
 export const configureRoute = new Hono<Env>();
 
@@ -40,15 +40,14 @@ configureRoute.post("/", async (c) => {
 });
 
 configureRoute.get("/", (c) => {
-  const configId = c.req.param("config");
-  const config = decodeConfig(configId ?? "");
-
+  const config = decodeConfig(c.req.param("config") ?? "");
   const initialSelectedIds = config.catalogIds || DEFAULT_COLLECTION_IDS;
 
   const manifestUrl = new URL(c.req.url);
   manifestUrl.search = "";
   manifestUrl.hash = "";
-  manifestUrl.pathname = `/${encodeConfig({ catalogIds: initialSelectedIds })}/manifest.json`;
+  const configId = encodeConfig({ catalogIds: ALL_COLLECTION_IDS.filter((id) => initialSelectedIds.includes(id)) });
+  manifestUrl.pathname = `/${configId}/manifest.json`;
 
   const configureProps: ConfigureProps = {
     initialSelectedIds,

@@ -77,6 +77,7 @@ export const COLLECTION_CONFIGS: ManifestCatalog[] = [
 
 export const collectionConfigMap = new Map(COLLECTION_CONFIGS.map((item) => [item.id, item]));
 
+export const ALL_COLLECTION_IDS = COLLECTION_CONFIGS.map((item) => item.id);
 export const DEFAULT_COLLECTION_IDS = [
   "movie_hot_gaia",
   "movie_weekly_best",
