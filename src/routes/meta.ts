@@ -8,7 +8,7 @@ import { isForwardUserAgent, proxyImageUrl } from "@/libs/utils";
 
 export const metaRoute = new Hono<Env>();
 
-export const idPrefixes = ["tt", "tmdb:", "douban:"];
+export const idPrefixes = ["douban:"];
 const idPrefixRegex = new RegExp(`^(${idPrefixes.join("|")})`);
 
 metaRoute.get("*", async (c) => {
@@ -49,7 +49,7 @@ metaRoute.get("*", async (c) => {
   if (!doubanId && imdbId) {
     try {
       doubanId = await api.doubanAPI.getIdByImdbId(imdbId);
-    } catch (error) { }
+    } catch (error) {}
   }
 
   if (!doubanId) {
@@ -66,14 +66,22 @@ metaRoute.get("*", async (c) => {
     description: data.intro ?? undefined,
     genres: data.genres ?? undefined,
     links: [
-      ...(data.directors ?? []).map((item) => ({ name: item.name, category: "director", url: `stremio:///search?search=${item.name}` })), // url is required.
-      ...(data.actors ?? []).map((item) => ({ name: item.name, category: "cast", url: `stremio:///search?search=${item.name}` })), // url is required.
+      ...(data.directors ?? []).map((item) => ({
+        name: item.name,
+        category: "director",
+        url: `stremio:///search?search=${item.name}`,
+      })), // url is required.
+      ...(data.actors ?? []).map((item) => ({
+        name: item.name,
+        category: "cast",
+        url: `stremio:///search?search=${item.name}`,
+      })), // url is required.
       { name: `豆瓣评分：${data.rating?.value ?? "N/A"}`, category: "douban", url: data.url ?? "" },
     ],
     language: data.languages?.join(" / "),
     country: data.countries?.join(" / "),
     awards: data.honor_infos?.map((item) => item.title).join(" / "),
-    releaseInfo: data.year ?? undefined
+    releaseInfo: data.year ?? undefined,
   };
   meta.behaviorHints ||= {};
   const isInForward = isForwardUserAgent(c);
