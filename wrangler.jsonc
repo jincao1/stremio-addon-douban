@@ -1,10 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "stremio-addon-douban",
-  "main": "./dist/index.js",
-  "assets": {
-    "directory": "./dist"
-  },
+  "main": "./src/index.tsx",
   "compatibility_date": "2025-11-28",
   "compatibility_flags": ["nodejs_compat"],
   "placement": {

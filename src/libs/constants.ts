@@ -63,7 +63,7 @@ export const SERIES_RANK_ID_MAP = {
   高分动画剧集: "ECR4CRXHA",
 };
 
-export const collectionConfigs: Array<ManifestCatalog> = [
+export const collectionConfigs: ManifestCatalog[] = [
   { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie" },
   { id: "movie_weekly_best", name: "一周口碑电影榜", type: "movie" },
   { id: "movie_real_time_hotest", name: "实时热门电影", type: "movie" },

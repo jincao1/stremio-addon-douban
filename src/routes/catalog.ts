@@ -1,18 +1,18 @@
-import type { AddonBuilder, ManifestCatalog, MetaPreview } from "@stremio-addon/sdk";
-import { type Context, type Env, Hono } from "hono";
+import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
+import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
+import { generateId } from "@/libs/catalog";
 import { collectionConfigs, SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { matchResourceRoute } from "@/libs/router";
 import { isForwardUserAgent } from "@/libs/utils";
-import { generateId } from "./utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
 const collectionIds = collectionConfigs.map((config) => config.id);
 
-export const catalogRouter = new Hono<Env>();
+export const catalogRoute = new Hono<Env>();
 
-catalogRouter.get("*", async (c) => {
+catalogRoute.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
 
   if (!matched || !collectionIds.includes(params.id)) {
@@ -103,16 +103,3 @@ catalogRouter.get("*", async (c) => {
     staleError: SECONDS_PER_WEEK,
   } satisfies CatalogResponse);
 });
-
-export default catalogRouter;
-
-export const getCatalogs = async (c: Context<Env>) => {
-  api.initialize(c.env, c.executionCtx);
-
-  return collectionConfigs.map((item) => {
-    const result: ManifestCatalog = { ...item };
-    result.extra ||= [];
-    result.extra.push({ name: "skip" });
-    return result;
-  });
-};

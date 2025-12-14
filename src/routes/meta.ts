@@ -6,12 +6,12 @@ import { api } from "@/libs/api";
 import { matchResourceRoute } from "@/libs/router";
 import { isForwardUserAgent } from "@/libs/utils";
 
-export const metaRouter = new Hono<Env>();
+export const metaRoute = new Hono<Env>();
 
 export const idPrefixes = ["tt", "tmdb:", "douban:"];
 const idPrefixRegex = new RegExp(`^(${idPrefixes.join("|")})`);
 
-metaRouter.get("*", async (c) => {
+metaRoute.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
   if (!matched) {
     return c.notFound();
@@ -92,5 +92,3 @@ metaRouter.get("*", async (c) => {
     meta,
   } satisfies WithCache<{ meta: MetaDetail }>);
 });
-
-export default metaRouter;
