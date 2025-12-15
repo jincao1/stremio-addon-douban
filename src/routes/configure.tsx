@@ -1,5 +1,6 @@
 import { reactRenderer } from "@hono/react-renderer";
 import { type Env, Hono } from "hono";
+import { getCookie, setCookie } from "hono/cookie";
 import { Github, Heart } from "lucide-react";
 import { Link, Script, ViteClient } from "vite-ssr-components/react";
 import pkg from "@/../package.json" with { type: "json" };
@@ -14,7 +15,6 @@ configureRoute.get(
   "*",
   reactRenderer(({ c, children }) => {
     const userAgent = c.req.header("User-Agent");
-    console.log(userAgent);
     const isSafari = userAgent?.includes("Safari") && !userAgent?.includes("Chrome");
     return (
       <html lang="zh" className={isSafari ? "safari" : ""}>
@@ -36,11 +36,13 @@ configureRoute.post("/", async (c) => {
   const formData = await c.req.formData();
   const catalogIds = formData.get("catalogIds")?.toString().split(",").filter(Boolean) ?? [];
   const config = encodeConfig({ catalogIds });
+  setCookie(c, "config", config);
   return c.redirect(`/${config}/configure`);
 });
 
 configureRoute.get("/", (c) => {
-  const config = decodeConfig(c.req.param("config") ?? "");
+  const defaultConfig = c.req.param("config") ?? getCookie(c, "config");
+  const config = decodeConfig(defaultConfig ?? "");
   const initialSelectedIds = config.catalogIds || DEFAULT_COLLECTION_IDS;
 
   const manifestUrl = new URL(c.req.url);
