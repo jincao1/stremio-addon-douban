@@ -10,7 +10,8 @@ import { catalogRoute } from "./routes/catalog";
 import { configureRoute } from "./routes/configure";
 import { dashRoute } from "./routes/dash";
 import { manifestRoute } from "./routes/manifest";
-import { metaRoute } from "./routes/meta";
+
+// import { metaRoute } from "./routes/meta";
 
 const app = new Hono();
 
@@ -27,8 +28,8 @@ app.route("/configure", configureRoute);
 app.route("/:config/configure", configureRoute);
 app.route("/catalog", catalogRoute);
 app.route("/:config/catalog", catalogRoute);
-app.route("/meta", metaRoute);
-app.route("/:config/meta", metaRoute);
+// app.route("/meta", metaRoute);
+// app.route("/:config/meta", metaRoute);
 app.route("/dash", dashRoute);
 
 export default {
