@@ -1,4 +1,4 @@
-import { brotliCompressSync, brotliDecompressSync, constants } from "node:zlib";
+import { compressSync, decompressSync, strFromU8, strToU8 } from "fflate";
 import { z } from "zod";
 import { DEFAULT_COLLECTION_IDS } from "./constants";
 
@@ -11,18 +11,14 @@ export type ConfigInput = z.input<typeof configSchema>;
 
 export const encodeConfig = (config?: ConfigInput | null): string => {
   const stringified = JSON.stringify(configSchema.parse(config ?? {}));
-  const compressed = brotliCompressSync(stringified, {
-    params: {
-      [constants.BROTLI_PARAM_QUALITY]: 11,
-    },
-  });
-  const result = compressed.toString("base64url");
-  return result;
+  const result = btoa(String.fromCharCode(...compressSync(strToU8(stringified), { level: 6, mem: 8 })));
+  return Buffer.from(result).toString("base64url");
 };
 
 export const decodeConfig = (encoded: string): Config => {
   try {
-    const decompressed = brotliDecompressSync(Buffer.from(encoded, "base64url"));
+    const fromBase64 = Uint8Array.from(atob(Buffer.from(encoded, "base64url").toString()), (c) => c.charCodeAt(0));
+    const decompressed = strFromU8(decompressSync(fromBase64));
     return configSchema.parse(JSON.parse(decompressed.toString()));
   } catch {
     return configSchema.parse({});
