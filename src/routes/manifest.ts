@@ -3,20 +3,18 @@ import { type Env, Hono } from "hono";
 import pkg from "@/../package.json" with { type: "json" };
 import { api } from "@/libs/api";
 import { getCatalogs } from "@/libs/catalog";
+import { DEFAULT_COLLECTION_IDS } from "@/libs/constants";
 import { idPrefixes } from "./meta";
 
 export const manifestRoute = new Hono<Env>();
 
 manifestRoute.get("/", async (c) => {
   const configId = c.req.param("config");
-  if (!configId) {
-    return c.notFound();
-  }
   const config = await api.getUserConfig(configId ?? "");
-  if (!config) {
+  if (configId && !config) {
     return c.notFound();
   }
-  const catalogs = await getCatalogs(config.config.catalogIds);
+  const catalogs = await getCatalogs(config?.config.catalogIds || DEFAULT_COLLECTION_IDS);
   return c.json({
     id: `${pkg.name}.${configId}`,
     version: pkg.version,
