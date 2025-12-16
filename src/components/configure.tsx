@@ -11,7 +11,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Switch } from "@/components/ui/switch";
-import { COLLECTION_CONFIGS } from "@/libs/constants";
+import { COLLECTION_CONFIGS } from "@/libs/catalog";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./ui/input-group";

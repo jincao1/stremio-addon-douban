@@ -6,7 +6,7 @@ import {
   showResponseSchema,
   Environment as TraktBaseUrl,
 } from "@trakt/api";
-import { z } from "zod";
+import { z } from "zod/v3";
 import pkg from "@/../package.json" with { type: "json" };
 import type { DoubanIdMapping } from "@/db";
 import { SECONDS_PER_DAY } from "../constants";

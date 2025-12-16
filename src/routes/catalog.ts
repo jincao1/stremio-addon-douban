@@ -1,8 +1,8 @@
 import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
-import { generateId } from "@/libs/catalog";
-import { collectionConfigMap, SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
+import { collectionConfigMap, generateId } from "@/libs/catalog";
+import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
 import { isForwardUserAgent } from "@/libs/utils";
 
