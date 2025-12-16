@@ -1,8 +1,8 @@
 import type { Manifest } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import pkg from "@/../package.json" with { type: "json" };
+import { api } from "@/libs/api";
 import { getCatalogs } from "@/libs/catalog";
-import { decodeConfig, encodeConfig } from "@/libs/config";
 import { idPrefixes } from "./meta";
 
 export const manifestRoute = new Hono<Env>();
@@ -10,14 +10,13 @@ export const manifestRoute = new Hono<Env>();
 manifestRoute.get("/", async (c) => {
   const configId = c.req.param("config");
   if (!configId) {
-    const encodedConfig = encodeConfig();
-    return c.redirect(`/${encodedConfig}/manifest.json`);
+    return c.notFound();
   }
-  const config = decodeConfig(configId ?? "");
+  const config = await api.getUserConfig(configId ?? "");
   if (!config) {
     return c.notFound();
   }
-  const catalogs = await getCatalogs(config.catalogIds);
+  const catalogs = await getCatalogs(config.config.catalogIds);
   return c.json({
     id: `${pkg.name}.${configId}`,
     version: pkg.version,

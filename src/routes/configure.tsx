@@ -1,12 +1,12 @@
 import { type Env, Hono } from "hono";
-import { getCookie, setCookie } from "hono/cookie";
 import { CoffeeIcon, Github, Heart } from "lucide-react";
 import { Link, Script, ViteClient } from "vite-ssr-components/react";
 import pkg from "@/../package.json" with { type: "json" };
 import { Configure, type ConfigureProps } from "@/components/configure";
 import { Button } from "@/components/ui/button";
-import { decodeConfig, encodeConfig } from "@/libs/config";
-import { ALL_COLLECTION_IDS, DEFAULT_COLLECTION_IDS } from "@/libs/constants";
+import type { UserMapping } from "@/db";
+import { api } from "@/libs/api";
+import { DEFAULT_COLLECTION_IDS } from "@/libs/constants";
 
 export const configureRoute = new Hono<Env>();
 
@@ -35,24 +35,29 @@ configureRoute.use("*", async (c, next) => {
 
 configureRoute.post("/", async (c) => {
   const formData = await c.req.formData();
-  const catalogIds = formData.get("catalogIds")?.toString().split(",").filter(Boolean) ?? [];
-  const config = encodeConfig({ catalogIds });
-  setCookie(c, "config", config);
-  return c.redirect(`/${config}/configure`);
+  let userId = c.req.param("config") || formData.get("user-id");
+  if (!userId) {
+    userId = crypto.randomUUID();
+  }
+  await api.saveUserConfig({
+    userId: userId,
+    config: { catalogIds: formData.get("catalogIds")?.toString().split(",").filter(Boolean) ?? [] },
+  } as UserMapping); // creates the user config
+  return c.redirect(`/${userId}/configure`);
 });
 
-configureRoute.get("/", (c) => {
-  const defaultConfig = c.req.param("config") ?? getCookie(c, "config");
-  const config = decodeConfig(defaultConfig ?? "");
-  const initialSelectedIds = config.catalogIds || DEFAULT_COLLECTION_IDS;
+configureRoute.get("/", async (c) => {
+  const userId = c.req.param("config") ?? crypto.randomUUID();
+  const config = userId ? await api.getUserConfig(userId) : null;
+  const initialSelectedIds = config?.config.catalogIds || DEFAULT_COLLECTION_IDS;
 
   const manifestUrl = new URL(c.req.url);
   manifestUrl.search = "";
   manifestUrl.hash = "";
-  const configId = encodeConfig({ catalogIds: ALL_COLLECTION_IDS.filter((id) => initialSelectedIds.includes(id)) });
-  manifestUrl.pathname = `/${configId}/manifest.json`;
+  manifestUrl.pathname = `/${userId}/manifest.json`;
 
   const configureProps: ConfigureProps = {
+    userId,
     initialSelectedIds,
     manifestUrl: manifestUrl.toString(),
   };

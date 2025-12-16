@@ -14,9 +14,10 @@ import { Switch } from "@/components/ui/switch";
 import { COLLECTION_CONFIGS } from "@/libs/constants";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText } from "./ui/input-group";
 
 export interface ConfigureProps {
+  userId: string;
   initialSelectedIds: string[];
   manifestUrl: string;
 }
@@ -25,7 +26,7 @@ export interface ConfigureProps {
 const movieConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "movie");
 const seriesConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "series");
 
-export const Configure: FC<ConfigureProps> = ({ initialSelectedIds, manifestUrl }) => {
+export const Configure: FC<ConfigureProps> = ({ userId, initialSelectedIds, manifestUrl }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -122,7 +123,7 @@ export const Configure: FC<ConfigureProps> = ({ initialSelectedIds, manifestUrl 
             </InputGroupAddon>
           </InputGroup>
         </div>
-
+        <input type="hidden" name="user-id" value={userId} />
         <Button type="submit" className="w-full" size="lg" disabled={isNoneSelected}>
           生成配置链接
         </Button>
