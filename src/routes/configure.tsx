@@ -16,7 +16,7 @@ configureRoute.use("*", async (c, next) => {
     const isSafari = userAgent?.includes("Safari") && !userAgent?.includes("Chrome");
     return c.html(
       (
-        <html lang="zh" className={isSafari ? "safari" : ""}>
+        <html lang="zh" className={isSafari ? "safari dark" : "dark"}>
           <head>
             <ViteClient />
             <Link rel="stylesheet" href="/src/style.css" />

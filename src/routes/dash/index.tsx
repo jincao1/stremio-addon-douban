@@ -9,7 +9,7 @@ dashRoute.use("*", async (c, next) => {
   c.setRenderer((children) => {
     return c.html(
       (
-        <html lang="zh">
+        <html lang="zh" className="dark">
           <head>
             <ViteClient />
             <Link rel="stylesheet" href="/src/style.css" />
@@ -40,3 +40,4 @@ dashRoute.use(
 );
 
 dashRoute.route("/tidy-up", tidyUpRoute);
+dashRoute.get("/", (c) => c.redirect("/dash/tidy-up"));
