@@ -58,7 +58,10 @@ tidyUpDetailRoute.get("/:doubanId", async (c) => {
   ]);
 
   const tmdbResults = await api.tmdbAPI
-    .search(subject.type === "tv" ? "tv" : "movie", { query: subject.title, year: subject.year ?? undefined })
+    .search(subject.type, {
+      query: subject.original_title || subject.title,
+      year: subject.year ?? undefined,
+    })
     .catch(() => null);
 
   const doubanCoverUrl = subject.cover_url || subject.pic?.large || subject.pic?.normal || "";
