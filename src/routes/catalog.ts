@@ -1,8 +1,8 @@
 import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
-import { collectionConfigMap, generateId } from "@/libs/catalog";
-import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
+import { generateId } from "@/libs/catalog";
+import { collectionConfigMap, SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
 import { isForwardUserAgent, proxyImageUrl } from "@/libs/utils";
 
@@ -82,9 +82,17 @@ catalogRoute.get("*", async (c) => {
       description: item.description ?? undefined,
       background: proxyImageUrl(item.photos?.[0]),
       links: [
-        ...(item.directors ?? []).map((item) => ({ name: item, category: "director", url: `stremio:///search?search=${item}` })), // url is required.
-        ...(item.actors ?? []).map((item) => ({ name: item, category: "cast", url: `stremio:///search?search=${item}` })), // url is required.
-        { name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }
+        ...(item.directors ?? []).map((item) => ({
+          name: item,
+          category: "director",
+          url: `stremio:///search?search=${item}`,
+        })), // url is required.
+        ...(item.actors ?? []).map((item) => ({
+          name: item,
+          category: "cast",
+          url: `stremio:///search?search=${item}`,
+        })), // url is required.
+        { name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" },
       ],
     };
     if (imdbId) {
