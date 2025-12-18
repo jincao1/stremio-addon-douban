@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type CreateAxiosDefaults } from "axios";
 import { drizzle } from "drizzle-orm/d1";
-import { doubanMapping } from "@/db";
+import { doubanMapping, userConfig } from "@/db";
 import { getContext } from "../middleware";
 
 export enum CacheType {
@@ -145,6 +145,7 @@ export class BaseAPI {
     return drizzle(this.context.env.STREMIO_ADDON_DOUBAN, {
       schema: {
         doubanMapping,
+        userConfig,
       },
     });
   }
