@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { uniqBy } from "es-toolkit";
 import { type Env, Hono } from "hono";
 import { ArrowLeft, Check, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -60,18 +61,40 @@ tidyUpDetailRoute.get("/:doubanId", async (c) => {
   const tmdbResults = await api.tmdbAPI
     .search(subject.type, {
       query: subject.original_title || subject.title,
-      year: subject.year ?? undefined,
+      // year: subject.year ?? undefined,
     })
     .catch(() => null);
 
   const doubanCoverUrl = subject.cover_url || subject.pic?.large || subject.pic?.normal || "";
 
-  const traktResults = await api.traktAPI.search(subject.type === "tv" ? "show" : "movie", subject.title);
+  let traktResults = await api.traktAPI.search(subject.type === "tv" ? "show" : "movie", subject.title);
 
   if (tmdbResults?.results?.length === 1) {
     const resp = await api.traktAPI.searchByTmdbId(tmdbResults.results[0].id.toString());
     traktResults.push(...resp);
   }
+
+  if (idMapping.tmdbId) {
+    const resp = await api.traktAPI.searchByTmdbId(idMapping.tmdbId.toString());
+    traktResults.push(...resp);
+  }
+
+  if (idMapping.imdbId) {
+    const resp = await api.tmdbAPI.findById(idMapping.imdbId, "imdb_id");
+    if (resp.movie_results.length > 0) {
+      tmdbResults?.results.push(...resp.movie_results);
+    }
+    if (resp.tv_results.length > 0) {
+      tmdbResults?.results.push(...resp.tv_results);
+    }
+    if (resp.tv_episode_results.length > 0) {
+      tmdbResults?.results.push(...resp.tv_episode_results);
+    }
+    const traktSearchResp = await api.traktAPI.searchByImdbId(idMapping.imdbId);
+    traktResults.push(...traktSearchResp);
+  }
+
+  traktResults = uniqBy(traktResults, (item) => api.traktAPI.getSearchResultField(item, "ids")?.trakt);
 
   return c.render(
     <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">

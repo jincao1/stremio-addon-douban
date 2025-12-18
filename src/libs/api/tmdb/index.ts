@@ -1,6 +1,6 @@
 import { SECONDS_PER_DAY } from "@/libs/constants";
 import { BaseAPI } from "../base";
-import { tmdbSearchResultSchema } from "./schema";
+import { tmdbFindResultSchema, tmdbSearchResultSchema } from "./schema";
 
 export class TmdbAPI extends BaseAPI {
   constructor() {
@@ -17,6 +17,28 @@ export class TmdbAPI extends BaseAPI {
       params,
     });
     return tmdbSearchResultSchema.parse(resp);
+  }
+
+  async findById(
+    externalId: string,
+    externalSource:
+      | "imdb_id"
+      | "facebook_id"
+      | "instagram_id"
+      | "tvdb_id"
+      | "tiktok_id"
+      | "twitter_id"
+      | "wikidata_id"
+      | "youtube_id",
+  ) {
+    const resp = await this.request({
+      url: `/find/${externalId}`,
+      params: {
+        external_source: externalSource,
+        language: "zh-CN",
+      },
+    });
+    return tmdbFindResultSchema.parse(resp);
   }
 
   async searchById(type: "movie" | "tv", id: number) {
