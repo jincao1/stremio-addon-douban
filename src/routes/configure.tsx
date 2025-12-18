@@ -63,7 +63,7 @@ configureRoute.get("/", async (c) => {
   return c.render(
     <>
       <Script src="/src/client/configure.tsx" />
-      <div className="container mx-auto flex h-dvh max-w-lg flex-col">
+      <div className="container mx-auto flex h-dvh max-w-2xl flex-col">
         <header className="shrink-0 px-4 py-6">
           <div className="flex items-start justify-between gap-4">
             <div>
