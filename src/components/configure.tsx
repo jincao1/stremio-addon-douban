@@ -97,7 +97,7 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
               <Item size="sm">
                 <ItemContent>
                   <ItemTitle>图片代理</ItemTitle>
-                  <ItemDescription>选择图片代理服务</ItemDescription>
+                  <ItemDescription>选择图片代理服务（针对 Stremio 用户优化，Forward 用户不建议开启）</ItemDescription>
                 </ItemContent>
                 <ItemActions>
                   <NativeSelect
