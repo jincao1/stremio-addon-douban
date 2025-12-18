@@ -32,3 +32,9 @@ export const tmdbSearchResultSchema = z.object({
   results: z.array(tmdbSearchResultItemSchema),
   total_results: z.number().nullish(),
 });
+
+export const tmdbFindResultSchema = z.object({
+  movie_results: z.array(tmdbSearchResultItemSchema).catch([]),
+  tv_results: z.array(tmdbSearchResultItemSchema).catch([]),
+  tv_episode_results: z.array(tmdbSearchResultItemSchema).catch([]),
+});
