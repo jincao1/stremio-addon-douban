@@ -4,7 +4,7 @@ import { type Env, Hono } from "hono";
 import { doubanMapping } from "@/db";
 import { api } from "@/libs/api";
 import { matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent, proxyImageUrl } from "@/libs/utils";
+import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
 
 export const metaRoute = new Hono<Env>();
 
@@ -20,6 +20,9 @@ metaRoute.get("*", async (c) => {
   if (!idPrefixRegex.test(metaId)) {
     return c.notFound();
   }
+
+  const userId = params.config;
+  const config = await api.getUserConfig(userId ?? "");
 
   let doubanId: string | number | undefined;
   let imdbId: string | undefined | null;
@@ -56,7 +59,7 @@ metaRoute.get("*", async (c) => {
     return c.notFound();
   }
   const data = await api.doubanAPI.getSubjectDetail(doubanId);
-  const poster = proxyImageUrl(data.cover_url || data.pic?.large || data.pic?.normal || undefined);
+  const poster = generateImageUrl(data.cover_url || data.pic?.large || data.pic?.normal || "", config.imageProxy);
   const meta: MetaDetail & { [key: string]: any } = {
     id: metaId,
     type: data.type === "tv" ? "series" : "movie",

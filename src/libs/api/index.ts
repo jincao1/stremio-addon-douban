@@ -1,13 +1,7 @@
 import { eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
-import {
-  type DoubanIdMapping,
-  doubanMapping,
-  doubanMappingSchema,
-  type UserMapping,
-  userConfig,
-  userSchema,
-} from "@/db";
+import { type DoubanIdMapping, doubanMapping, doubanMappingSchema, userConfig } from "@/db";
+import { type Config, configSchema } from "../config";
 import { BaseAPI } from "./base";
 import { DoubanAPI } from "./douban";
 import { ImdbAPI } from "./imdb";
@@ -170,12 +164,12 @@ class API extends BaseAPI {
     return null;
   }
 
-  async saveUserConfig(config: UserMapping) {
+  async saveUserConfig(userId: string, config: Config) {
     await this.db
       .insert(userConfig)
       .values({
-        userId: config.userId,
-        config: config.config ? JSON.stringify(config.config) : "",
+        userId: userId,
+        config: config ? JSON.stringify(config) : "",
       })
       .onConflictDoUpdate({
         target: userConfig.userId,
@@ -185,11 +179,10 @@ class API extends BaseAPI {
       });
   }
 
-  async getUserConfig(userId: string) {
+  async getUserConfig(userId: string): Promise<Config> {
     const result = await this.db.select().from(userConfig).where(eq(userConfig.userId, userId));
-    if (result.length < 1) return null;
-    const config = JSON.parse(result[0].config);
-    return userSchema.parse({ userId: userId, config: config });
+    if (result.length < 1) return configSchema.parse({});
+    return configSchema.parse(JSON.parse(result[0].config));
   }
 }
 

@@ -1,6 +1,5 @@
-import { useCallback, useState } from "hono/jsx/dom";
-import { Check, Copy, Film, Tv } from "lucide-react";
-import { type FC, Fragment } from "react";
+import { Check, Copy, Film, Settings, Tv } from "lucide-react";
+import { type FC, Fragment, useCallback, useState } from "react";
 import {
   Item,
   ItemActions,
@@ -11,14 +10,17 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Switch } from "@/components/ui/switch";
-import { COLLECTION_CONFIGS } from "@/libs/constants";
+import { COLLECTION_CONFIGS } from "@/libs/catalog-shared";
+import type { Config } from "@/libs/config";
+import { SettingSection } from "./setting-section";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./ui/input-group";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 
 export interface ConfigureProps {
   userId: string;
-  initialSelectedIds: string[];
+  config: Config;
   manifestUrl: string;
 }
 
@@ -26,8 +28,8 @@ export interface ConfigureProps {
 const movieConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "movie");
 const seriesConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "series");
 
-export const Configure: FC<ConfigureProps> = ({ userId, initialSelectedIds, manifestUrl }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds);
+export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, manifestUrl }) => {
+  const [config, setConfig] = useState(initialConfig);
   const [isCopied, setIsCopied] = useState(false);
 
   const copyToClipboard = useCallback(async (text: string) => {
@@ -40,10 +42,13 @@ export const Configure: FC<ConfigureProps> = ({ userId, initialSelectedIds, mani
     }
   }, []);
 
-  const isNoneSelected = selectedIds.length === 0;
+  const isNoneSelected = config.catalogIds.length === 0;
 
   const toggleItem = (id: string, checked: boolean) => {
-    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((i) => i !== id)));
+    setConfig((prev) => ({
+      ...prev,
+      catalogIds: checked ? [...prev.catalogIds, id] : prev.catalogIds.filter((i) => i !== id),
+    }));
   };
 
   const renderItems = (items: typeof COLLECTION_CONFIGS) =>
@@ -57,7 +62,7 @@ export const Configure: FC<ConfigureProps> = ({ userId, initialSelectedIds, mani
             </ItemContent>
             <ItemActions>
               <Switch
-                checked={selectedIds.includes(item.id)}
+                checked={config.catalogIds.includes(item.id)}
                 onCheckedChange={(checked) => toggleItem(item.id, checked)}
               />
             </ItemActions>
@@ -71,37 +76,79 @@ export const Configure: FC<ConfigureProps> = ({ userId, initialSelectedIds, mani
     <form method="post" className="flex h-full flex-col">
       {/* 中间：可滚动的列表 */}
       <div className="relative flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto px-4 pb-4">
+        <div className="h-full space-y-4 overflow-y-auto px-4 pb-4">
+          <SettingSection title="通用" icon={<Settings className="size-4 text-muted-foreground" />}>
+            <ItemGroup className="rounded-lg border">
+              <Item size="sm">
+                <ItemContent>
+                  <ItemTitle>启用动态集合</ItemTitle>
+                  <ItemDescription>豆瓣会不定期更新一些集合，启用后会自动添加</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <Switch
+                    name="dynamicCollections"
+                    checked={config.dynamicCollections}
+                    onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, dynamicCollections: checked }))}
+                  />
+                </ItemActions>
+              </Item>
+
+              <ItemSeparator />
+
+              <Item size="sm">
+                <ItemContent>
+                  <ItemTitle>图片代理</ItemTitle>
+                  <ItemDescription>选择图片代理服务</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <NativeSelect
+                    name="imageProxy"
+                    value={config.imageProxy}
+                    size="sm"
+                    onChange={(e) =>
+                      setConfig((prev) => ({ ...prev, imageProxy: e.target.value as Config["imageProxy"] }))
+                    }
+                  >
+                    <NativeSelectOption value="weserv">Weserv</NativeSelectOption>
+                    <NativeSelectOption value="none">不使用代理</NativeSelectOption>
+                  </NativeSelect>
+                </ItemActions>
+              </Item>
+            </ItemGroup>
+          </SettingSection>
+
           {/* 电影分类 */}
-          <div className="mb-4">
-            <div className="sticky top-0 z-10 flex items-center gap-2 bg-background/95 py-2 backdrop-blur-sm">
-              <Film className="size-4 text-muted-foreground" />
-              <span className="font-medium text-sm">电影</span>
+          <SettingSection
+            title="电影"
+            icon={<Film className="size-4 text-muted-foreground" />}
+            extra={
               <Badge variant="outline" className="ml-auto">
-                {movieConfigs.filter((c) => selectedIds.includes(c.id)).length}/{movieConfigs.length}
+                {movieConfigs.filter((c) => config.catalogIds.includes(c.id)).length}/{movieConfigs.length}
               </Badge>
-            </div>
+            }
+          >
             <ItemGroup className="rounded-lg border">{renderItems(movieConfigs)}</ItemGroup>
-          </div>
+          </SettingSection>
 
           {/* 剧集分类 */}
-          <div>
-            <div className="sticky top-0 z-10 flex items-center gap-2 bg-background/95 py-2 backdrop-blur-sm">
-              <Tv className="size-4 text-muted-foreground" />
-              <span className="font-medium text-sm">剧集</span>
+          <SettingSection
+            title="剧集"
+            icon={<Tv className="size-4 text-muted-foreground" />}
+            extra={
               <Badge variant="outline" className="ml-auto">
-                {seriesConfigs.filter((c) => selectedIds.includes(c.id)).length}/{seriesConfigs.length}
+                {seriesConfigs.filter((c) => config.catalogIds.includes(c.id)).length}/{seriesConfigs.length}
               </Badge>
-            </div>
+            }
+          >
             <ItemGroup className="rounded-lg border">{renderItems(seriesConfigs)}</ItemGroup>
-          </div>
+          </SettingSection>
         </div>
 
         {/* 底部渐变遮罩 */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-background to-transparent" />
       </div>
 
-      <input type="hidden" name="catalogIds" value={selectedIds.join(",")} />
+      <input type="hidden" name="catalogIds" value={config.catalogIds.join(",")} />
 
       {/* 底部：固定操作区 */}
       <div className="shrink-0 space-y-3 p-4">

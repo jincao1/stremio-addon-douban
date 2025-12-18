@@ -2,9 +2,10 @@ import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
 import { generateId } from "@/libs/catalog";
-import { collectionConfigMap, SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
+import { decodeConfig } from "@/libs/config";
+import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent, proxyImageUrl } from "@/libs/utils";
+import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
@@ -13,9 +14,11 @@ export const catalogRoute = new Hono<Env>();
 catalogRoute.get("*", async (c) => {
   const [matched, params] = matchResourceRoute(c.req.path);
 
-  if (!matched || !collectionConfigMap.has(params.id)) {
+  if (!matched) {
     return c.notFound();
   }
+
+  const config = decodeConfig(params.config);
 
   const getExtra = getExtraFactory(c, params.extra);
 
@@ -78,9 +81,9 @@ catalogRoute.get("*", async (c) => {
       id: generateId(item.id, mapping),
       name: item.title,
       type: item.type === "tv" ? "series" : "movie",
-      poster: proxyImageUrl(item.cover ?? ""),
+      poster: generateImageUrl(item.cover ?? "", config.imageProxy),
       description: item.description ?? undefined,
-      background: proxyImageUrl(item.photos?.[0]),
+      background: generateImageUrl(item.photos?.[0] ?? "", config.imageProxy),
       links: [
         ...(item.directors ?? []).map((item) => ({
           name: item,

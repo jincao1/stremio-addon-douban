@@ -3,7 +3,7 @@ import { type Env, Hono } from "hono";
 import pkg from "@/../package.json" with { type: "json" };
 import { api } from "@/libs/api";
 import { getCatalogs } from "@/libs/catalog";
-import { DEFAULT_COLLECTION_IDS } from "@/libs/constants";
+import { type Config, decodeConfig, encodeConfig } from "@/libs/config";
 import { idPrefixes } from "./meta";
 
 export const manifestRoute = new Hono<Env>();
@@ -14,7 +14,7 @@ manifestRoute.get("/", async (c) => {
   if (configId && !config) {
     return c.notFound();
   }
-  const catalogs = await getCatalogs(config?.config.catalogIds || DEFAULT_COLLECTION_IDS);
+  const catalogs = await getCatalogs(config);
   return c.json({
     id: `${pkg.name}.${configId}`,
     version: pkg.version,
@@ -28,5 +28,6 @@ manifestRoute.get("/", async (c) => {
     behaviorHints: {
       configurable: true,
     },
-  } satisfies Manifest);
+    currentConfig: config,
+  } satisfies Manifest & { currentConfig: Config });
 });

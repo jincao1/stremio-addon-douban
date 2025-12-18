@@ -58,12 +58,20 @@ tidyUpDetailRoute.get("/:doubanId", async (c) => {
   ]);
 
   const tmdbResults = await api.tmdbAPI
-    .search(subject.type === "tv" ? "tv" : "movie", { query: subject.title, year: subject.year ?? undefined })
+    .search(subject.type, {
+      query: subject.original_title || subject.title,
+      year: subject.year ?? undefined,
+    })
     .catch(() => null);
 
   const doubanCoverUrl = subject.cover_url || subject.pic?.large || subject.pic?.normal || "";
 
   const traktResults = await api.traktAPI.search(subject.type === "tv" ? "show" : "movie", subject.title);
+
+  if (tmdbResults?.results?.length === 1) {
+    const resp = await api.traktAPI.searchByTmdbId(tmdbResults.results[0].id.toString());
+    traktResults.push(...resp);
+  }
 
   return c.render(
     <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">

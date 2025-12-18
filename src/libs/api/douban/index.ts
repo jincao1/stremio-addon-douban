@@ -7,6 +7,7 @@ import { SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_WEEK } from "../../const
 import { BaseAPI, CacheType } from "../base";
 import {
   type DoubanSubjectCollectionCategory,
+  doubanModulesSchema,
   doubanSubjectCollectionCategorySchema,
   doubanSubjectCollectionInfoSchema,
   doubanSubjectCollectionSchema,
@@ -103,6 +104,7 @@ export class DoubanAPI extends BaseAPI {
         count: DoubanAPI.PAGE_SIZE,
       },
       cache: {
+        type: CacheType.KV | CacheType.LOCAL,
         key: `subject_collection:${collectionId}:${skip}`,
         ttl: SECONDS_PER_HOUR * 2,
       },
@@ -114,9 +116,9 @@ export class DoubanAPI extends BaseAPI {
     const resp = await this.request({
       url: `/subject/${subjectId}`,
       cache: {
+        type: CacheType.KV | CacheType.LOCAL,
         key: `subject_detail:${subjectId}`,
         ttl: SECONDS_PER_DAY,
-        type: CacheType.KV | CacheType.LOCAL,
       },
     });
     return doubanSubjectDetailSchema.parse(resp);
@@ -167,5 +169,17 @@ export class DoubanAPI extends BaseAPI {
       );
     } catch (error) {}
     return doubanId;
+  }
+
+  async getModules(type: "movie" | "tv") {
+    const resp = await this.request({
+      url: `/${type}/modules`,
+      cache: {
+        type: CacheType.KV | CacheType.LOCAL,
+        key: `douban_${type}_modules`,
+        ttl: SECONDS_PER_DAY,
+      },
+    });
+    return doubanModulesSchema.parse(resp);
   }
 }
