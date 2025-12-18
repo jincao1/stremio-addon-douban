@@ -3,7 +3,7 @@ import { type Env, Hono } from "hono";
 import pkg from "@/../package.json" with { type: "json" };
 import { api } from "@/libs/api";
 import { getCatalogs } from "@/libs/catalog";
-import { type Config, decodeConfig, encodeConfig } from "@/libs/config";
+import type { Config } from "@/libs/config";
 import { idPrefixes } from "./meta";
 
 export const manifestRoute = new Hono<Env>();

@@ -6,7 +6,6 @@ import pkg from "@/../package.json" with { type: "json" };
 import { Configure, type ConfigureProps } from "@/components/configure";
 import { Button } from "@/components/ui/button";
 import { api } from "@/libs/api";
-import { DEFAULT_COLLECTION_IDS } from "@/libs/catalog-shared";
 import type { Config } from "@/libs/config";
 
 export const configureRoute = new Hono<Env>();
