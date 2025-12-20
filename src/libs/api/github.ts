@@ -11,11 +11,12 @@ export interface GitHubUser {
 }
 
 export class GitHubAPI {
-  private clientId: string;
   private oauthApp: OAuthApp;
 
-  constructor(clientId: string, clientSecret: string) {
-    this.clientId = clientId;
+  constructor(
+    private clientId: string,
+    clientSecret: string,
+  ) {
     this.oauthApp = new OAuthApp({
       clientId,
       clientSecret,
