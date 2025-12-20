@@ -1,5 +1,5 @@
 import type { MetaDetail, WithCache } from "@stremio-addon/sdk";
-import { eq, type SQL } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { type Env, Hono } from "hono";
 import { doubanMapping } from "@/db";
 import { api } from "@/libs/api";
@@ -21,43 +21,17 @@ metaRoute.get("*", async (c) => {
     return c.notFound();
   }
 
-  const userId = params.config;
-  const config = await api.getUserConfig(userId ?? "");
-
-  let doubanId: string | number | undefined;
-  let imdbId: string | undefined | null;
-  let tmdbId: string | number | undefined | null;
-  let queryCondition: SQL<unknown> | undefined;
-
+  let doubanId: number | undefined;
   if (metaId.startsWith("douban:")) {
     doubanId = Number.parseInt(metaId.split(":")[1], 10);
-    queryCondition = eq(doubanMapping.doubanId, doubanId);
-  } else if (metaId.startsWith("tt")) {
-    imdbId = metaId;
-    queryCondition = eq(doubanMapping.imdbId, imdbId);
-  } else if (metaId.startsWith("tmdb:")) {
-    tmdbId = Number.parseInt(metaId.split(":")[1], 10);
-    queryCondition = eq(doubanMapping.tmdbId, tmdbId);
   }
-
-  if (queryCondition) {
-    const [row] = await api.db.select().from(doubanMapping).where(queryCondition);
-    if (row) {
-      doubanId ||= row.doubanId;
-      imdbId ||= row.imdbId;
-      tmdbId ||= row.tmdbId;
-    }
-  }
-
-  if (!doubanId && imdbId) {
-    try {
-      doubanId = await api.doubanAPI.getIdByImdbId(imdbId);
-    } catch (error) {}
-  }
-
   if (!doubanId) {
     return c.notFound();
   }
+
+  const userId = params.config;
+  const config = await api.getUserConfig(userId ?? "");
+
   const data = await api.doubanAPI.getSubjectDetail(doubanId);
   const poster = generateImageUrl(data.cover_url || data.pic?.large || data.pic?.normal || "", config.imageProxy);
   const meta: MetaDetail & { [key: string]: any } = {
@@ -79,6 +53,11 @@ metaRoute.get("*", async (c) => {
         category: "cast",
         url: `stremio:///search?search=${item.name}`,
       })), // url is required.
+      ...data.linewatches.map((item) => ({
+        name: item.source.name,
+        category: "linewatches",
+        url: item.source_uri ?? "",
+      })),
       { name: `豆瓣评分：${data.rating?.value ?? "N/A"}`, category: "douban", url: data.url ?? "" },
     ],
     language: data.languages?.join(" / "),
@@ -88,17 +67,20 @@ metaRoute.get("*", async (c) => {
   };
   meta.behaviorHints ||= {};
   const isInForward = isForwardUserAgent(c);
-  if (tmdbId) {
+
+  const dbData = await api.db.query.doubanMapping.findFirst({ where: eq(doubanMapping.doubanId, doubanId) });
+
+  if (dbData?.tmdbId) {
     if (isInForward) {
-      meta.tmdb_id = `tmdb:${tmdbId}`;
+      meta.tmdb_id = `tmdb:${dbData.tmdbId}`;
     } else {
-      meta.tmdbId = tmdbId;
+      meta.tmdbId = dbData.tmdbId;
     }
-    meta.behaviorHints.defaultVideoId = `tmdb:${tmdbId}`;
+    meta.behaviorHints.defaultVideoId = `tmdb:${dbData.tmdbId}`;
   }
-  if (imdbId) {
-    meta.imdb_id = imdbId;
-    meta.behaviorHints.defaultVideoId = imdbId;
+  if (dbData?.imdbId) {
+    meta.imdb_id = dbData.imdbId;
+    meta.behaviorHints.defaultVideoId = dbData.imdbId;
   }
 
   return c.json({

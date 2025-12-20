@@ -1,3 +1,4 @@
+import { compact } from "es-toolkit";
 import { z } from "zod/v4";
 
 export const doubanSubjectCollectionCategorySchema = z
@@ -125,6 +126,20 @@ export const doubanSubjectDetailSchema = z.object({
     })
     .nullish(),
   url: z.string().nullish(),
+  linewatches: z
+    .array(
+      z
+        .object({
+          source_uri: z.string().nullish(),
+          source: z.object({
+            name: z.string(),
+          }),
+        })
+        .nullish()
+        .catch(() => null),
+    )
+    .nullish()
+    .transform((v) => (v ? compact(v) : [])),
 });
 
 export const tmdbSearchResultSchema = z.object({
