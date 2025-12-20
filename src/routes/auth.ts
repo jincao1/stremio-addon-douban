@@ -119,8 +119,8 @@ export const authRoute = new Hono<Env>()
   /**
    * POST /auth/logout - 登出
    */
-  .post("/logout", async (c) => {
-    await deleteSession(c);
+  .post("/logout", (c) => {
+    deleteSession(c);
     const returnUrl = c.req.query("return") || "/configure";
     return c.redirect(returnUrl);
   })

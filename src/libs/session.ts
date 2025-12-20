@@ -1,91 +1,68 @@
-import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import type { Context, Env, MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { sign, verify } from "hono/jwt";
 import { getDrizzle, type User, type UserConfig, userConfigs, users } from "@/db";
 
-const SESSION_COOKIE_NAME = "session";
-const SESSION_TTL = 60 * 60 * 24 * 30; // 30 天
+const JWT_COOKIE_NAME = "token";
+const JWT_TTL = 60 * 60 * 24 * 30; // 30 天
 
-interface SessionData {
-  userId: string;
-  expiresAt: number;
+interface JwtPayload {
+  sub: string; // userId
+  exp: number;
 }
 
 /**
- * 生成随机 session ID
- */
-function generateSessionId(): string {
-  return randomBytes(32).toString("hex");
-}
-
-/**
- * 获取 KV 中的 session key
- */
-function getSessionKey(sessionId: string): string {
-  return `session:${sessionId}`;
-}
-
-/**
- * 创建新的 session
+ * 创建 JWT 并设置 cookie
  */
 export async function createSession(c: Context<Env>, userId: string): Promise<string> {
-  const sessionId = generateSessionId();
-  const expiresAt = Date.now() + SESSION_TTL * 1000;
+  const exp = Math.floor(Date.now() / 1000) + JWT_TTL;
 
-  const sessionData: SessionData = {
-    userId,
-    expiresAt,
-  };
+  const token = await sign(
+    {
+      sub: userId,
+      exp,
+    } satisfies JwtPayload,
+    c.env.JWT_SECRET,
+  );
 
-  await c.env.KV.put(getSessionKey(sessionId), JSON.stringify(sessionData), {
-    expirationTtl: SESSION_TTL,
-  });
-
-  setCookie(c, SESSION_COOKIE_NAME, sessionId, {
+  setCookie(c, JWT_COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,
     sameSite: "Lax",
-    maxAge: SESSION_TTL,
+    maxAge: JWT_TTL,
     path: "/",
   });
 
-  return sessionId;
+  return token;
 }
 
 /**
- * 获取当前 session
+ * 验证 JWT 并获取 payload
  */
-export async function getSession(c: Context<Env>): Promise<SessionData | null> {
-  const sessionId = getCookie(c, SESSION_COOKIE_NAME);
-  if (!sessionId) {
+export async function getSession(c: Context<Env>): Promise<JwtPayload | null> {
+  const token = getCookie(c, JWT_COOKIE_NAME);
+  if (!token) {
     return null;
   }
 
-  const sessionData = await c.env.KV.get<SessionData>(getSessionKey(sessionId), "json");
-  if (!sessionData) {
+  try {
+    const payload = await verify(token, c.env.JWT_SECRET);
+    if (typeof payload.sub !== "string") {
+      return null;
+    }
+    return { sub: payload.sub, exp: payload.exp as number };
+  } catch {
+    // token 无效或过期
     return null;
   }
-
-  // 检查是否过期
-  if (sessionData.expiresAt < Date.now()) {
-    await deleteSession(c);
-    return null;
-  }
-
-  return sessionData;
 }
 
 /**
- * 删除当前 session（登出）
+ * 删除 session（登出）- 仅清除 cookie
  */
-export async function deleteSession(c: Context<Env>): Promise<void> {
-  const sessionId = getCookie(c, SESSION_COOKIE_NAME);
-  if (sessionId) {
-    await c.env.KV.delete(getSessionKey(sessionId));
-  }
-  deleteCookie(c, SESSION_COOKIE_NAME, {
+export function deleteSession(c: Context<Env>): void {
+  deleteCookie(c, JWT_COOKIE_NAME, {
     path: "/",
   });
 }
@@ -94,13 +71,13 @@ export async function deleteSession(c: Context<Env>): Promise<void> {
  * 获取当前登录用户
  */
 export async function getCurrentUser(c: Context<Env>): Promise<User | null> {
-  const session = await getSession(c);
-  if (!session) {
+  const payload = await getSession(c);
+  if (!payload) {
     return null;
   }
 
   const db = getDrizzle(c.env);
-  const user = await db.query.users.findFirst({ where: eq(users.id, session.userId) });
+  const user = await db.query.users.findFirst({ where: eq(users.id, payload.sub) });
 
   return user ?? null;
 }
@@ -143,7 +120,6 @@ export async function saveUserConfig(
         catalogIds: config.catalogIds,
         imageProxy: config.imageProxy,
         dynamicCollections: config.dynamicCollections,
-        updatedAt: new Date(),
       },
     });
 }
