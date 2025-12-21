@@ -6,7 +6,9 @@
     "directory": "./public",
   },
   "compatibility_date": "2025-11-28",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "placement": {
     "mode": "smart"
   },
@@ -29,6 +31,9 @@
     "binding": "KV",
     "id": "4a8c807a09c14283a70b119d92763459"
   }],
+   "vars": {
+    "DOUBAN_API_KEY": "0ac44ae016490db2204ce0a042db2916",
+  },
   "ratelimits": [
     {
       "name": "PUBLIC_RATE_LIMIT",
@@ -48,7 +53,9 @@
     // }
   ],
   "triggers": {
-    "crons": ["0 * * * *"]
+    "crons": [
+      "0 * * * *"
+    ]
   },
   "observability": {
     "logs": {

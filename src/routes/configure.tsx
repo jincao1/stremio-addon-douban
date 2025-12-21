@@ -1,14 +1,24 @@
 import { reactRenderer } from "@hono/react-renderer";
+import { zValidator } from "@hono/zod-validator";
 import { type Env, Hono } from "hono";
 import { CoffeeIcon, Github, Heart } from "lucide-react";
 import { Link, Script, ViteClient } from "vite-ssr-components/react";
 import pkg from "@/../package.json" with { type: "json" };
 import { Configure, type ConfigureProps } from "@/components/configure";
-import { Button } from "@/components/ui/button";
 import { api } from "@/libs/api";
-import type { Config } from "@/libs/config";
+import { type Config, configSchema, isUserId } from "@/libs/config";
 
-export const configureRoute = new Hono<Env>();
+export const configureRoute = new Hono<Env>().put("/", zValidator("json", configSchema), async (c) => {
+  const config = c.req.valid("json");
+  const userId = c.req.header("X-User-ID") || "";
+  if (!isUserId(userId)) {
+    return c.json({ message: "Invalid User" }, 500);
+  }
+  await api.saveUserConfig(userId, config);
+  return c.json({ success: true });
+});
+
+export type ConfigureRoute = typeof configureRoute;
 
 configureRoute.get(
   "*",
@@ -31,6 +41,7 @@ configureRoute.get(
   }),
 );
 
+// POST 处理配置保存
 configureRoute.post("/", async (c) => {
   const formData = await c.req.formData();
 
@@ -62,32 +73,12 @@ configureRoute.get("/", async (c) => {
   return c.render(
     <>
       <Script src="/src/client/configure.tsx" />
-      <div className="container mx-auto flex h-dvh max-w-2xl flex-col">
-        <header className="shrink-0 px-4 py-6">
+      <div className="flex h-dvh flex-col">
+        <header className="page-container shrink-0 px-4 pt-6 pb-2">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-balance font-bold text-xl tracking-tight">{pkg.description}</h1>
               <p className="text-muted-foreground text-sm">选择要显示的目录，生成你的专属配置</p>
-            </div>
-            <div className="flex items-center max-sm:flex-col max-sm:items-start">
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://github.com/jincao1/stremio-addon-douban" target="_blank" rel="noopener noreferrer">
-                  <Github />
-                  <span>GitHub</span>
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://afdian.com/a/baran" target="_blank" rel="noopener noreferrer">
-                  <Heart />
-                  <span>捐赠 - Baran</span>
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://buymeacoffee.com/jcao" target="_blank" rel="noopener noreferrer">
-                  <CoffeeIcon />
-                  <span>捐赠 - JC</span>
-                </a>
-              </Button>
             </div>
           </div>
         </header>
@@ -101,6 +92,40 @@ configureRoute.get("/", async (c) => {
         <div id="configure" className="flex min-h-0 flex-1 flex-col">
           <Configure {...configureProps} />
         </div>
+
+        <footer className="shrink-0 px-4 py-2">
+          <div className="flex items-center justify-center gap-4 text-muted-foreground text-xs">
+            <a
+              href="https://github.com/jincao1/stremio-addon-douban"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-foreground"
+            >
+              <Github className="size-3" />
+              <span>GitHub</span>
+            </a>
+            <a
+              href="https://afdian.com/a/baran"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-foreground"
+            >
+              <Heart className="size-3" />
+              <span>捐赠 - Baran</span>
+            </a>
+            <a
+              href="https://buymeacoffee.com/jcao"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-foreground"
+            >
+              <CoffeeIcon className="size-3" />
+              <span>捐赠 - JC</span>
+            </a>
+          </div>
+
+          <div className="h-safe-b" />
+        </footer>
       </div>
     </>,
   );
