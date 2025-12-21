@@ -1,7 +1,6 @@
-import { isEqual } from "es-toolkit";
 import { hc } from "hono/client";
 import { Check, Copy, Film, Settings, Tv } from "lucide-react";
-import { type FC, Fragment, useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import { type FC, Fragment, startTransition, useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Item,
@@ -53,7 +52,7 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
   const isNoneSelected = config.catalogIds.length === 0;
 
   // 检查配置是否有变化
-  const hasChanges = useMemo(() => !isEqual(config, initialConfig), [config, initialConfig]);
+  //const hasChanges = useMemo(() => !isEqual(config, initialConfig), [config, initialConfig]);
 
   const toggleItem = (id: string, checked: boolean) => {
     setConfig((prev) => ({
@@ -96,14 +95,19 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
   );
 
   useEffect(() => {
-    if (actionState.success) {
+    if ("success" in actionState && actionState.success) {
       toast.success("配置已保存");
     } else if (actionState.message) {
       toast.error(actionState.message);
     }
   }, [actionState]);
 
-  const formProps = useMemo<React.FormHTMLAttributes<HTMLFormElement>>(() => ({ action: formAction }), [formAction]);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    startTransition(() => formAction());
+  };
+
+  //const formProps = useMemo<React.FormHTMLAttributes<HTMLFormElement>>(() => ({ action: formAction }), [formAction]);
 
   const buttonProps = useMemo(() => {
     const props: React.ComponentProps<typeof Button> = {
@@ -121,11 +125,11 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
       props.children = "保存配置";
     }
     return props;
-  }, [isNoneSelected, isPending, hasChanges]);
+  }, [isNoneSelected, isPending]);
 
   return (
     <>
-      <form {...formProps} className="flex h-full flex-col">
+      <form onSubmit={handleSubmit} className="flex h-full flex-col">
         {/* 中间：可滚动的列表 */}
         <div className="relative flex-1 overflow-hidden">
           <div className="h-full space-y-4 overflow-y-auto pb-4">
@@ -163,6 +167,7 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
                         onChange={(e) =>
                           setConfig((prev) => ({ ...prev, imageProxy: e.target.value as Config["imageProxy"] }))
                         }
+                        autoComplete="off"
                       >
                         <NativeSelectOption value="weserv">Weserv</NativeSelectOption>
                         <NativeSelectOption value="none">不使用代理</NativeSelectOption>
