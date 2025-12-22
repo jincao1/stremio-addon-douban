@@ -108,6 +108,7 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
   };
 
   //const formProps = useMemo<React.FormHTMLAttributes<HTMLFormElement>>(() => ({ action: formAction }), [formAction]);
+  const formProps = userId ? { onSubmit: handleSubmit } : { method: "post" as const };
 
   const buttonProps = useMemo(() => {
     const props: React.ComponentProps<typeof Button> = {
@@ -129,7 +130,7 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="flex h-full flex-col">
+      <form {...formProps} className="flex h-full flex-col">
         {/* 中间：可滚动的列表 */}
         <div className="relative flex-1 overflow-hidden">
           <div className="h-full space-y-4 overflow-y-auto pb-4">
@@ -213,25 +214,31 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
 
         {/* 底部：固定操作区 */}
         <div className="page-container shrink-0 space-y-3 px-4 pt-4">
-          <div className="space-y-1.5">
-            <label htmlFor="manifest-url" className="text-muted-foreground text-xs">
-              Manifest 链接
-            </label>
-            <InputGroup>
-              <InputGroupInput id="manifest-url" value={manifestUrl} readOnly className="font-mono text-xs" />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-xs"
-                  onClick={() => copyToClipboard(manifestUrl)}
-                  aria-label="复制链接"
-                  className={isCopied ? "text-green-500" : ""}
-                >
-                  {isCopied ? <Check /> : <Copy />}
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-          </div>
-          <input type="hidden" name="user-id" value={userId} />
+          {userId ? (
+            <>
+              <div className="space-y-1.5">
+                <label htmlFor="manifest-url" className="text-muted-foreground text-xs">
+                  Manifest 链接
+                </label>
+                <InputGroup>
+                  <InputGroupInput id="manifest-url" value={manifestUrl} readOnly className="font-mono text-xs" />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      size="icon-xs"
+                      onClick={() => copyToClipboard(manifestUrl)}
+                      aria-label="复制链接"
+                      className={isCopied ? "text-green-500" : ""}
+                    >
+                      {isCopied ? <Check /> : <Copy />}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </div>
+              <input type="hidden" name="user-id" value={userId} />{" "}
+            </>
+          ) : (
+            ""
+          )}
           <Button type="submit" className="w-full" size="lg" {...buttonProps} />
         </div>
       </form>

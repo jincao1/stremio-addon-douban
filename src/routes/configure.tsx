@@ -59,7 +59,7 @@ configureRoute.post("/", async (c) => {
 });
 
 configureRoute.get("/", async (c) => {
-  const userId = c.req.param("config") ?? crypto.randomUUID();
+  const userId = c.req.param("config") || "";
   const config: Config = await api.getUserConfig(userId);
 
   const { origin } = new URL(c.req.url);

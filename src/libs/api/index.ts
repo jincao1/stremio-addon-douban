@@ -180,6 +180,7 @@ class API extends BaseAPI {
   }
 
   async getUserConfig(userId: string): Promise<Config> {
+    if (!userId) return configSchema.parse({});
     const result = await this.db.query.userConfig.findFirst({
       where: eq(userConfig.userId, userId),
     });
