@@ -1,4 +1,49 @@
 import type { ManifestCatalog } from "@stremio-addon/sdk";
+import { maxBy } from "es-toolkit";
+
+export type YearlyRankingItem = Pick<ManifestCatalog, "id" | "name"> & { year: number };
+
+export const MOVIE_YEARLY_RANKING_ID = "__movie_yearly_ranking__";
+export const MOVIE_YEARLY_RANKING: YearlyRankingItem[] = [
+  { id: "ECE472UNY", name: "豆瓣 2025 评分最高电影", year: 2025 },
+  { id: "ECBE7RX5A", name: "豆瓣 2024 评分最高电影", year: 2024 },
+  { id: "ECQ46F7XI", name: "豆瓣 2023 评分最高电影", year: 2023 },
+  { id: "ECKA55LSA", name: "豆瓣 2022 评分最高电影", year: 2022 },
+  { id: "ECWY6B2GQ", name: "豆瓣 2021 评分最高电影", year: 2021 },
+  { id: "EC2A5MRIY", name: "豆瓣 2020 评分最高电影", year: 2020 },
+  { id: "ECFYHQBWQ", name: "豆瓣 2019 评分最高电影", year: 2019 },
+  { id: "2018_movie_1", name: "豆瓣 2018 评分最高电影", year: 2018 },
+  { id: "2017_movie_chinese_score", name: "豆瓣 2017 评分最高电影", year: 2017 },
+  { id: "2016_movie_451", name: "豆瓣 2016 评分最高电影", year: 2016 },
+  { id: "2015_movie_3", name: "豆瓣 2015 评分最高电影", year: 2015 },
+  { id: "2014_movie_2", name: "豆瓣 2014 评分最高电影", year: 2014 },
+];
+
+export const TV_YEARLY_RANKING_ID = "__tv_yearly_ranking__";
+export const TV_YEARLY_RANKING: YearlyRankingItem[] = [
+  { id: "EC2FACYKQ", name: "豆瓣 2025 评分最高剧集", year: 2025 },
+  { id: "ECYA7RAZQ", name: "豆瓣 2024 评分最高剧集", year: 2024 },
+  { id: "ECTE6EOZA", name: "豆瓣 2023 评分最高剧集", year: 2023 },
+  { id: "ECWU56XUI", name: "豆瓣 2022 评分最高剧集", year: 2022 },
+  { id: "ECOY56I6Y", name: "豆瓣 2021 评分最高剧集", year: 2021 },
+  { id: "ECCM5TXSI", name: "豆瓣 2020 评分最高剧集", year: 2020 },
+  { id: "ECR4HOW3I", name: "豆瓣 2019 评分最高剧集", year: 2019 },
+  { id: "2018_tv_23", name: "豆瓣 2018 评分最高剧集", year: 2018 },
+  { id: "2017_tv_domestic_score", name: "豆瓣 2017 评分最高剧集", year: 2017 },
+  { id: "2016_tv_478", name: "豆瓣 2016 评分最高剧集", year: 2016 },
+  { id: "2015_tv_6", name: "豆瓣 2015 评分最高剧集", year: 2015 },
+  { id: "2014_tv_14", name: "豆瓣 2014 评分最高剧集", year: 2014 },
+];
+
+export const YEARLY_RANKINGS: Record<string, YearlyRankingItem[]> = {
+  [MOVIE_YEARLY_RANKING_ID]: MOVIE_YEARLY_RANKING,
+  [TV_YEARLY_RANKING_ID]: TV_YEARLY_RANKING,
+};
+
+export const isYearlyRankingId = (id: string): id is keyof typeof YEARLY_RANKINGS => id in YEARLY_RANKINGS;
+
+export const getLatestYearlyRanking = (id: string): YearlyRankingItem | undefined =>
+  isYearlyRankingId(id) ? maxBy(YEARLY_RANKINGS[id], (item) => item.year) : undefined;
 
 export const COLLECTION_CONFIGS: Array<ManifestCatalog & { hasGenre?: boolean }> = [
   { id: "movie_hot_gaia", name: "豆瓣热门电影", type: "movie" },
@@ -33,18 +78,8 @@ export const COLLECTION_CONFIGS: Array<ManifestCatalog & { hasGenre?: boolean }>
   { id: "ECCEPGM4Y", name: "运动片榜", type: "movie", hasGenre: true },
   { id: "film_genre_36", name: "短片榜", type: "movie", hasGenre: true },
   // --
-  { id: "ECE472UNY", name: "豆瓣 2025 评分最高电影", type: "movie", hasGenre: true },
-  { id: "ECBE7RX5A", name: "豆瓣 2024 评分最高电影", type: "movie", hasGenre: true },
-  { id: "ECQ46F7XI", name: "豆瓣 2023 评分最高电影", type: "movie", hasGenre: true },
-  { id: "ECKA55LSA", name: "豆瓣 2022 评分最高电影", type: "movie", hasGenre: true },
-  { id: "ECWY6B2GQ", name: "豆瓣 2021 评分最高电影", type: "movie", hasGenre: true },
-  { id: "EC2A5MRIY", name: "豆瓣 2020 评分最高电影", type: "movie", hasGenre: true },
-  { id: "ECFYHQBWQ", name: "豆瓣 2019 评分最高电影", type: "movie", hasGenre: true },
-  { id: "2018_movie_1", name: "豆瓣 2018 评分最高电影", type: "movie", hasGenre: true },
-  { id: "2017_movie_chinese_score", name: "豆瓣 2017 评分最高电影", type: "movie", hasGenre: true },
-  { id: "2016_movie_451", name: "豆瓣 2016 评分最高电影", type: "movie", hasGenre: true },
-  { id: "2015_movie_3", name: "豆瓣 2015 评分最高电影", type: "movie", hasGenre: true },
-  { id: "2014_movie_2", name: "豆瓣 2014 评分最高电影", type: "movie", hasGenre: true },
+  { id: MOVIE_YEARLY_RANKING_ID, name: "豆瓣年度评分最高电影", type: "movie", hasGenre: true },
+
   // --
   { id: "tv_hot", name: "近期热门剧集", type: "series" },
   { id: "tv_american", name: "近期热门美剧", type: "series" },
@@ -70,18 +105,7 @@ export const COLLECTION_CONFIGS: Array<ManifestCatalog & { hasGenre?: boolean }>
   { id: "ECRM5BIFQ", name: "泰剧榜", type: "series", hasGenre: true },
   { id: "EC6I5FYHA", name: "欧洲剧榜", type: "series", hasGenre: true },
   // --
-  { id: "EC2FACYKQ", name: "豆瓣 2025 评分最高剧集", type: "series", hasGenre: true },
-  { id: "ECYA7RAZQ", name: "豆瓣 2024 评分最高剧集", type: "series", hasGenre: true },
-  { id: "ECTE6EOZA", name: "豆瓣 2023 评分最高剧集", type: "series", hasGenre: true },
-  { id: "ECWU56XUI", name: "豆瓣 2022 评分最高剧集", type: "series", hasGenre: true },
-  { id: "ECOY56I6Y", name: "豆瓣 2021 评分最高剧集", type: "series", hasGenre: true },
-  { id: "ECCM5TXSI", name: "豆瓣 2020 评分最高剧集", type: "series", hasGenre: true },
-  { id: "ECR4HOW3I", name: "豆瓣 2019 评分最高剧集", type: "series", hasGenre: true },
-  { id: "2018_tv_23", name: "豆瓣 2018 评分最高剧集", type: "series", hasGenre: true },
-  { id: "2017_tv_domestic_score", name: "豆瓣 2017 评分最高剧集", type: "series", hasGenre: true },
-  { id: "2016_tv_478", name: "豆瓣 2016 评分最高剧集", type: "series", hasGenre: true },
-  { id: "2015_tv_6", name: "豆瓣 2015 评分最高剧集", type: "series", hasGenre: true },
-  { id: "2014_tv_14", name: "豆瓣 2014 评分最高剧集", type: "series", hasGenre: true },
+  { id: TV_YEARLY_RANKING_ID, name: "豆瓣年度评分最高剧集", type: "series", hasGenre: true },
 ];
 
 export const ALL_COLLECTION_IDS = COLLECTION_CONFIGS.map((item) => item.id);

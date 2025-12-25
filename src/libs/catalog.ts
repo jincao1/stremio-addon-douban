@@ -1,7 +1,12 @@
 import type { ManifestCatalog } from "@stremio-addon/sdk";
 import pLimit from "p-limit";
 import { api } from "./api";
-import { COLLECTION_CONFIGS, DEFAULT_COLLECTION_IDS } from "./catalog-shared";
+import {
+  COLLECTION_CONFIGS,
+  DEFAULT_COLLECTION_IDS,
+  getLatestYearlyRanking,
+  isYearlyRankingId,
+} from "./catalog-shared";
 import type { Config } from "./config";
 
 export * from "./catalog-shared";
@@ -54,6 +59,9 @@ export const getCatalogs = async (config: Config) => {
         const result: ManifestCatalog = {
           ...item,
         };
+        if (isYearlyRankingId(item.id)) {
+          result.name = getLatestYearlyRanking(item.id)?.name ?? result.name;
+        }
         result.extra ||= [];
         result.extra.push({ name: "skip" });
         if (item.hasGenre) {

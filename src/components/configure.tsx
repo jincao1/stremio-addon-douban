@@ -15,7 +15,13 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
 import type { User } from "@/db";
-import { COLLECTION_CONFIGS } from "@/libs/catalog-shared";
+import {
+  COLLECTION_CONFIGS,
+  isYearlyRankingId,
+  MOVIE_YEARLY_RANKING_ID,
+  TV_YEARLY_RANKING_ID,
+  YEARLY_RANKINGS,
+} from "@/libs/catalog-shared";
 import type { Config } from "@/libs/config";
 import type { ConfigureRoute } from "@/routes/configure";
 import { SettingSection } from "./setting-section";
@@ -30,10 +36,6 @@ export interface ConfigureProps {
   manifestUrl: string;
   user?: User;
 }
-
-// 按类型分组
-const movieConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "movie");
-const seriesConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "series");
 
 const client = hc<ConfigureRoute>("/configure");
 
@@ -63,14 +65,30 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
     }));
   };
 
-  const renderItems = (items: typeof COLLECTION_CONFIGS) =>
+  const getConfigsByType = useCallback(
+    (type: "movie" | "series", yearlyRankingId: string) => {
+      const configs: Array<Pick<(typeof COLLECTION_CONFIGS)[number], "id" | "name">> = COLLECTION_CONFIGS.filter(
+        (c) => c.type === type,
+      );
+      if (!config.catalogIds.includes(yearlyRankingId)) {
+        configs.push(...(YEARLY_RANKINGS[yearlyRankingId] ?? []));
+      }
+      return configs;
+    },
+    [config.catalogIds],
+  );
+
+  const movieConfigs = useMemo(() => getConfigsByType("movie", MOVIE_YEARLY_RANKING_ID), [getConfigsByType]);
+  const seriesConfigs = useMemo(() => getConfigsByType("series", TV_YEARLY_RANKING_ID), [getConfigsByType]);
+
+  const renderItems = (items: Array<Pick<(typeof COLLECTION_CONFIGS)[number], "id" | "name">>) =>
     items.map((item, index, array) => (
       <Fragment key={item.id}>
         <Item size="sm" asChild>
           <label>
             <ItemContent>
               <ItemTitle>{item.name}</ItemTitle>
-              {item.extra && <ItemDescription>支持分类筛选</ItemDescription>}
+              {isYearlyRankingId(item.id) && <ItemDescription>动态获取最新的年度榜单</ItemDescription>}
             </ItemContent>
             <ItemActions>
               <Switch
@@ -114,7 +132,7 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
 
   const buttonProps = useMemo(() => {
     const props: React.ComponentProps<typeof Button> = {
-      disabled: isNoneSelected || hasChanges,
+      disabled: isNoneSelected || !hasChanges,
     };
     if (!isStarredUser) {
       props.children = "生成配置链接";
