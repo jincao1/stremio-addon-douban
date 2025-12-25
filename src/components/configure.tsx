@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/item";
 import { Toaster } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
-import { COLLECTION_CONFIGS } from "@/libs/catalog-shared";
+import { COLLECTION_CONFIGS, isYearlyRankingId } from "@/libs/catalog-shared";
 import type { Config } from "@/libs/config";
 import type { ConfigureRoute } from "@/routes/configure";
 import { SettingSection } from "./setting-section";
@@ -22,16 +22,13 @@ import { Button } from "./ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./ui/input-group";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { Spinner } from "./ui/spinner";
+import { YearlyRankingDrawer } from "./yearly-ranking-drawer";
 
 export interface ConfigureProps {
   userId: string;
   config: Config;
   manifestUrl: string;
 }
-
-// 按类型分组
-const movieConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "movie");
-const seriesConfigs = COLLECTION_CONFIGS.filter((c) => c.type === "series");
 
 const client = hc<ConfigureRoute>("/configure");
 
@@ -61,26 +58,49 @@ export const Configure: FC<ConfigureProps> = ({ userId, config: initialConfig, m
     }));
   };
 
-  const renderItems = (items: typeof COLLECTION_CONFIGS) =>
-    items.map((item, index, array) => (
-      <Fragment key={item.id}>
-        <Item size="sm" asChild>
-          <label>
-            <ItemContent>
-              <ItemTitle>{item.name}</ItemTitle>
-              {item.extra && <ItemDescription>支持分类筛选</ItemDescription>}
-            </ItemContent>
-            <ItemActions>
-              <Switch
-                checked={config.catalogIds.includes(item.id)}
-                onCheckedChange={(checked) => toggleItem(item.id, checked)}
-              />
-            </ItemActions>
-          </label>
-        </Item>
-        {index !== array.length - 1 && <ItemSeparator />}
-      </Fragment>
-    ));
+  const getConfigsByType = useCallback(
+    (type: "movie" | "series") => COLLECTION_CONFIGS.filter((c) => c.type === type),
+    [],
+  );
+
+  const movieConfigs = useMemo(() => getConfigsByType("movie"), [getConfigsByType]);
+  const seriesConfigs = useMemo(() => getConfigsByType("series"), [getConfigsByType]);
+
+  const renderItems = (items: Array<Pick<(typeof COLLECTION_CONFIGS)[number], "id" | "name">>) => (
+    <>
+      {items.map((item, index, array) => {
+        if (isYearlyRankingId(item.id)) {
+          return (
+            <YearlyRankingDrawer
+              yearlyRankingId={item.id}
+              title={item.name}
+              catalogIds={config.catalogIds}
+              onToggle={toggleItem}
+            />
+          );
+        }
+        return (
+          <Fragment key={item.id}>
+            <Item size="sm" asChild>
+              <label>
+                <ItemContent>
+                  <ItemTitle>{item.name}</ItemTitle>
+                  {isYearlyRankingId(item.id) && <ItemDescription>动态获取最新的年度榜单</ItemDescription>}
+                </ItemContent>
+                <ItemActions>
+                  <Switch
+                    checked={config.catalogIds.includes(item.id)}
+                    onCheckedChange={(checked) => toggleItem(item.id, checked)}
+                  />
+                </ItemActions>
+              </label>
+            </Item>
+            {index !== array.length - 1 && <ItemSeparator />}
+          </Fragment>
+        );
+      })}
+    </>
+  );
 
   const [actionState, formAction, isPending] = useActionState(
     async () => {

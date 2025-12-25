@@ -2,6 +2,7 @@ import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
 import { generateId } from "@/libs/catalog";
+import { getLatestYearlyRanking, isYearlyRankingId } from "@/libs/catalog-shared";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
 import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
@@ -23,6 +24,14 @@ catalogRoute.get("*", async (c) => {
 
   // 获取豆瓣合集数据
   let collectionId = params.id;
+  if (isYearlyRankingId(collectionId)) {
+    const latest = getLatestYearlyRanking(collectionId);
+    if (!latest) {
+      return c.notFound();
+    }
+    collectionId = latest.id;
+  }
+
   const genre = getExtra("genre");
   if (genre) {
     const category = await api.doubanAPI.getSubjectCollectionCategory(collectionId).catch(() => null);
