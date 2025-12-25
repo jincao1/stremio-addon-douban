@@ -33,6 +33,7 @@ export const COLLECTION_CONFIGS: Array<ManifestCatalog & { hasGenre?: boolean }>
   { id: "ECCEPGM4Y", name: "运动片榜", type: "movie", hasGenre: true },
   { id: "film_genre_36", name: "短片榜", type: "movie", hasGenre: true },
   // --
+  { id: "ECE472UNY", name: "豆瓣 2025 评分最高电影", type: "movie", hasGenre: true },
   { id: "ECBE7RX5A", name: "豆瓣 2024 评分最高电影", type: "movie", hasGenre: true },
   { id: "ECQ46F7XI", name: "豆瓣 2023 评分最高电影", type: "movie", hasGenre: true },
   { id: "ECKA55LSA", name: "豆瓣 2022 评分最高电影", type: "movie", hasGenre: true },
@@ -69,6 +70,7 @@ export const COLLECTION_CONFIGS: Array<ManifestCatalog & { hasGenre?: boolean }>
   { id: "ECRM5BIFQ", name: "泰剧榜", type: "series", hasGenre: true },
   { id: "EC6I5FYHA", name: "欧洲剧榜", type: "series", hasGenre: true },
   // --
+  { id: "EC2FACYKQ", name: "豆瓣 2025 评分最高剧集", type: "series", hasGenre: true },
   { id: "ECYA7RAZQ", name: "豆瓣 2024 评分最高剧集", type: "series", hasGenre: true },
   { id: "ECTE6EOZA", name: "豆瓣 2023 评分最高剧集", type: "series", hasGenre: true },
   { id: "ECWU56XUI", name: "豆瓣 2022 评分最高剧集", type: "series", hasGenre: true },
