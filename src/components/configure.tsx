@@ -15,9 +15,17 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
 import type { User } from "@/db";
-import { COLLECTION_CONFIGS, isYearlyRankingId } from "@/libs/collections";
+import {
+  COLLECTION_CONFIGS,
+  isYearlyRankingId,
+  MOVIE_GENRE_CONFIGS,
+  MOVIE_YEARLY_RANKING_ID,
+  TV_GENRE_CONFIGS,
+  TV_YEARLY_RANKING_ID,
+} from "@/libs/collections";
 import type { Config } from "@/libs/config";
 import type { ConfigureRoute } from "@/routes/configure";
+import { GenreDrawer } from "./genre-drawer";
 import { SettingSection } from "./setting-section";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -61,9 +69,17 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
     }));
   };
 
+  // 创建类型榜单 ID 集合，用于过滤
+  const movieGenreIds = useMemo(() => new Set(MOVIE_GENRE_CONFIGS.map((c) => c.id)), []);
+  const tvGenreIds = useMemo(() => new Set(TV_GENRE_CONFIGS.map((c) => c.id)), []);
+
   const getConfigsByType = useCallback(
-    (type: "movie" | "series") => COLLECTION_CONFIGS.filter((c) => c.type === type),
-    [],
+    (type: "movie" | "series") => {
+      const genreIds = type === "movie" ? movieGenreIds : tvGenreIds;
+      // 过滤掉类型榜单和年度榜单，它们会单独渲染为抽屉
+      return COLLECTION_CONFIGS.filter((c) => c.type === type && !genreIds.has(c.id) && !isYearlyRankingId(c.id));
+    },
+    [movieGenreIds, tvGenreIds],
   );
 
   const movieConfigs = useMemo(() => getConfigsByType("movie"), [getConfigsByType]);
@@ -71,37 +87,24 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
 
   const renderItems = (items: Array<Pick<(typeof COLLECTION_CONFIGS)[number], "id" | "name">>) => (
     <>
-      {items.map((item, index, array) => {
-        if (isYearlyRankingId(item.id)) {
-          return (
-            <YearlyRankingDrawer
-              yearlyRankingId={item.id}
-              title={item.name}
-              catalogIds={config.catalogIds}
-              onToggle={toggleItem}
-            />
-          );
-        }
-        return (
-          <Fragment key={item.id}>
-            <Item size="sm" asChild>
-              <label>
-                <ItemContent>
-                  <ItemTitle>{item.name}</ItemTitle>
-                  {isYearlyRankingId(item.id) && <ItemDescription>动态获取最新的年度榜单</ItemDescription>}
-                </ItemContent>
-                <ItemActions>
-                  <Switch
-                    checked={config.catalogIds.includes(item.id)}
-                    onCheckedChange={(checked) => toggleItem(item.id, checked)}
-                  />
-                </ItemActions>
-              </label>
-            </Item>
-            {index !== array.length - 1 && <ItemSeparator />}
-          </Fragment>
-        );
-      })}
+      {items.map((item, index, array) => (
+        <Fragment key={item.id}>
+          <Item size="sm" asChild>
+            <label>
+              <ItemContent>
+                <ItemTitle>{item.name}</ItemTitle>
+              </ItemContent>
+              <ItemActions>
+                <Switch
+                  checked={config.catalogIds.includes(item.id)}
+                  onCheckedChange={(checked) => toggleItem(item.id, checked)}
+                />
+              </ItemActions>
+            </label>
+          </Item>
+          {index !== array.length - 1 && <ItemSeparator />}
+        </Fragment>
+      ))}
     </>
   );
 
@@ -272,7 +275,23 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
                   </Badge>
                 }
               >
-                <ItemGroup className="rounded-lg border">{renderItems(movieConfigs)}</ItemGroup>
+                <ItemGroup className="rounded-lg border">
+                  {renderItems(movieConfigs)}
+                  <ItemSeparator />
+                  <GenreDrawer
+                    title="电影类型榜"
+                    items={MOVIE_GENRE_CONFIGS}
+                    catalogIds={config.catalogIds}
+                    onToggle={toggleItem}
+                  />
+                  <ItemSeparator />
+                  <YearlyRankingDrawer
+                    yearlyRankingId={MOVIE_YEARLY_RANKING_ID}
+                    title="豆瓣年度评分最高电影"
+                    catalogIds={config.catalogIds}
+                    onToggle={toggleItem}
+                  />
+                </ItemGroup>
               </SettingSection>
 
               {/* 剧集分类 */}
@@ -285,7 +304,23 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
                   </Badge>
                 }
               >
-                <ItemGroup className="rounded-lg border">{renderItems(seriesConfigs)}</ItemGroup>
+                <ItemGroup className="rounded-lg border">
+                  {renderItems(seriesConfigs)}
+                  <ItemSeparator />
+                  <GenreDrawer
+                    title="剧集类型榜"
+                    items={TV_GENRE_CONFIGS}
+                    catalogIds={config.catalogIds}
+                    onToggle={toggleItem}
+                  />
+                  <ItemSeparator />
+                  <YearlyRankingDrawer
+                    yearlyRankingId={TV_YEARLY_RANKING_ID}
+                    title="豆瓣年度评分最高剧集"
+                    catalogIds={config.catalogIds}
+                    onToggle={toggleItem}
+                  />
+                </ItemGroup>
               </SettingSection>
             </div>
           </div>

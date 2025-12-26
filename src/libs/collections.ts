@@ -3,7 +3,7 @@ import { maxBy } from "es-toolkit";
 
 //#region 类型定义
 
-type IdName = Pick<ManifestCatalog, "id" | "name">;
+export type IdName = Pick<ManifestCatalog, "id" | "name">;
 
 export type YearlyRankingItem = IdName & { year: number };
 
@@ -16,8 +16,8 @@ export type CollectionConfig = ManifestCatalog & {
 
 //#region 年度榜单
 
-const MOVIE_YEARLY_RANKING_ID = "__movie_yearly_ranking__";
-const TV_YEARLY_RANKING_ID = "__tv_yearly_ranking__";
+export const MOVIE_YEARLY_RANKING_ID = "__movie_yearly_ranking__";
+export const TV_YEARLY_RANKING_ID = "__tv_yearly_ranking__";
 
 const createYearlyRanking = (
   items: { id: string; year: number }[],
