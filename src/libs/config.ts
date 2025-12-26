@@ -57,7 +57,19 @@ export const getConfig = async (env: CloudflareBindings, id?: string): Promise<C
       const config = await db.query.userConfigs.findFirst({
         where: (userConfigs, { eq }) => eq(userConfigs.userId, id ?? ""),
       });
-      return configSchema.parse(config);
+      if (config) {
+        const transformedConfig: ConfigInput = {
+          catalogIds: config.catalogIds ?? undefined,
+          imageProxy: config.imageProxy,
+          dynamicCollections: config.dynamicCollections,
+          fanart: {
+            enabled: config.fanartEnabled,
+            apiKey: config.fanartApiKey ?? undefined,
+          },
+        };
+        return configSchema.parse(transformedConfig);
+      }
+      return configSchema.parse({});
     }
   } catch {
     return configSchema.parse({});
