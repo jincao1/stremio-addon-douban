@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { type Env, Hono } from "hono";
 import { doubanMapping } from "@/db";
 import { api } from "@/libs/api";
+import { FanartAPI } from "@/libs/api/fanart";
 import { getConfig } from "@/libs/config";
 import { matchResourceRoute } from "@/libs/router";
 import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
@@ -58,17 +59,33 @@ metaRoute.get("*", async (c) => {
 
   const dbData = await api.db.query.doubanMapping.findFirst({ where: eq(doubanMapping.doubanId, doubanId) });
 
-  if (dbData?.tmdbId) {
+  const { tmdbId, imdbId } = dbData || {};
+
+  if (tmdbId) {
     if (isInForward) {
-      meta.tmdb_id = `tmdb:${dbData.tmdbId}`;
+      meta.tmdb_id = `tmdb:${tmdbId}`;
     } else {
-      meta.tmdbId = dbData.tmdbId;
+      meta.tmdbId = tmdbId;
     }
-    meta.behaviorHints.defaultVideoId = `tmdb:${dbData.tmdbId}`;
+    meta.behaviorHints.defaultVideoId = `tmdb:${tmdbId}`;
   }
-  if (dbData?.imdbId) {
-    meta.imdb_id = dbData.imdbId;
-    meta.behaviorHints.defaultVideoId = dbData.imdbId;
+  if (imdbId) {
+    meta.imdb_id = imdbId;
+    meta.behaviorHints.defaultVideoId = imdbId;
+  }
+
+  const fanartApi = config.fanart.enabled ? new FanartAPI(config.fanart.apiKey) : null;
+  if (fanartApi && (tmdbId || imdbId)) {
+    let searchId = tmdbId?.toString();
+    if (!searchId && imdbId) {
+      searchId = imdbId;
+    }
+    const images = await fanartApi.getSubjectImages(data.type, searchId);
+    if (images) {
+      meta.poster = images.poster || meta.poster;
+      meta.background = images.background;
+      meta.logo = images.logo;
+    }
   }
 
   return c.json({
