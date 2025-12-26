@@ -1,6 +1,7 @@
 import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
+import { FanartAPI } from "@/libs/api/fanart";
 import { getLatestYearlyRanking, isYearlyRankingId } from "@/libs/catalog-shared";
 import { getConfig } from "@/libs/config";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
@@ -81,32 +82,48 @@ catalogRoute.get("*", async (c) => {
 
   const isInForward = isForwardUserAgent(c);
 
-  // 构建响应
-  const metas = items.map((item) => {
-    const mapping = mappingCache.get(item.id);
-    const { imdbId, tmdbId } = mapping ?? {};
-    const result: MetaPreview & { [key: string]: any } = {
-      id: `douban:${item.id}`,
-      name: item.title,
-      type: item.type === "tv" ? "series" : "movie",
-      poster: generateImageUrl(item.cover ?? "", config.imageProxy),
-      description: item.description ?? undefined,
-      background: item.photos?.[0],
-      links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }],
-    };
-    if (imdbId) {
-      result.imdb_id = imdbId;
-    }
-    if (tmdbId) {
-      if (isInForward) {
-        result.tmdb_id = `tmdb:${tmdbId}`;
-      } else {
-        result.tmdbId = tmdbId;
-      }
-    }
+  const fanartApi = config.fanart.enabled ? new FanartAPI(config.fanart.apiKey) : null;
 
-    return result;
-  });
+  // 构建响应
+  const metas = await Promise.all(
+    items.map(async (item) => {
+      const mapping = mappingCache.get(item.id);
+      const { imdbId, tmdbId } = mapping ?? {};
+      const result: MetaPreview & { [key: string]: any } = {
+        id: `douban:${item.id}`,
+        name: item.title,
+        type: item.type === "tv" ? "series" : "movie",
+        poster: generateImageUrl(item.cover ?? "", config.imageProxy),
+        description: item.description ?? undefined,
+        background: item.photos?.[0],
+        links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" }],
+      };
+      if (fanartApi && (tmdbId || imdbId)) {
+        let searchId = tmdbId?.toString();
+        if (!searchId && imdbId) {
+          searchId = imdbId;
+        }
+        const images = await fanartApi.getSubjectImages(item.type, searchId);
+        if (images) {
+          result.poster = images.poster;
+          result.background = images.background;
+          result.logo = images.logo;
+        }
+      }
+      if (imdbId) {
+        result.imdb_id = imdbId;
+      }
+      if (tmdbId) {
+        if (isInForward) {
+          result.tmdb_id = `tmdb:${tmdbId}`;
+        } else {
+          result.tmdbId = tmdbId;
+        }
+      }
+
+      return result;
+    }),
+  );
 
   return c.json({
     metas,

@@ -21,6 +21,7 @@ import type { ConfigureRoute } from "@/routes/configure";
 import { SettingSection } from "./setting-section";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./ui/input-group";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
 import { Spinner } from "./ui/spinner";
@@ -198,6 +199,59 @@ export const Configure: FC<ConfigureProps> = ({ config: initialConfig, manifestU
                       </NativeSelect>
                     </ItemActions>
                   </Item>
+
+                  <ItemSeparator />
+
+                  <Item size="sm">
+                    <ItemContent>
+                      <ItemTitle className={!user?.hasStarred ? "text-muted-foreground" : undefined}>
+                        使用 Fanart 图片
+                      </ItemTitle>
+                      <ItemDescription>
+                        {user?.hasStarred
+                          ? "使用 fanart.tv 提供高清海报、背景和 Logo"
+                          : "使用 GitHub 登录并星标本项目可开启此功能"}
+                      </ItemDescription>
+                    </ItemContent>
+                    <ItemActions>
+                      <Switch
+                        checked={config.fanart.enabled}
+                        disabled={!user?.hasStarred}
+                        onCheckedChange={(checked) =>
+                          setConfig((prev) => ({ ...prev, fanart: { ...prev.fanart, enabled: checked } }))
+                        }
+                      />
+                    </ItemActions>
+                  </Item>
+
+                  {!!(config.fanart.enabled && user?.hasStarred) && (
+                    <>
+                      <ItemSeparator />
+                      <Item size="sm">
+                        <ItemContent className="flex-1">
+                          <ItemTitle>Fanart API 密钥</ItemTitle>
+                          <ItemDescription>
+                            如果未提供个人 API 密钥，Fanart 将仅返回 7 天前过审的图片。如果提供个人 API 密钥，Fanart
+                            将返回 48小时前过审的图片。如果您是 VIP 会员，Fanart 将返回 10 分钟前过审的图片。
+                            <a href="https://fanart.tv/2015/01/personal-api-keys" target="_blank" rel="noreferrer">
+                              了解更多
+                            </a>
+                          </ItemDescription>
+                          <Input
+                            className="mt-2"
+                            placeholder="请输入你的 API 密钥"
+                            value={config.fanart.apiKey ?? ""}
+                            onChange={(e) =>
+                              setConfig((prev) => ({
+                                ...prev,
+                                fanart: { ...prev.fanart, apiKey: e.target.value || undefined },
+                              }))
+                            }
+                          />
+                        </ItemContent>
+                      </Item>
+                    </>
+                  )}
                 </ItemGroup>
               </SettingSection>
 

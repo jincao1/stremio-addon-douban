@@ -48,6 +48,8 @@ export const userConfigs = sqliteTable("user_configs", {
   catalogIds: text("catalog_ids", { mode: "json" }).$type<string[]>().default([]),
   imageProxy: text("image_proxy").default("none"),
   dynamicCollections: int("dynamic_collections", { mode: "boolean" }).default(false),
+  fanartEnabled: int("fanart_enabled", { mode: "boolean" }).default(false),
+  fanartApiKey: text("fanart_api_key"),
   createdAt: int("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),
   updatedAt: int("updated_at", { mode: "timestamp_ms" })
     .$defaultFn(() => new Date())

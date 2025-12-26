@@ -7,6 +7,12 @@ export const configSchema = z.object({
   catalogIds: z.array(z.string()).default(DEFAULT_COLLECTION_IDS),
   imageProxy: z.enum(["none", "weserv"]).default("none").catch("none"),
   dynamicCollections: z.boolean().default(false).catch(false),
+  fanart: z
+    .object({
+      enabled: z.boolean().default(false).catch(false),
+      apiKey: z.string().optional(),
+    })
+    .catch({ enabled: false }),
 });
 
 export type Config = z.infer<typeof configSchema>;

@@ -26,3 +26,5 @@ export const generateImageUrl = (href: string, imageProxy?: Config["imageProxy"]
       return href;
   }
 };
+
+export const isNumeric = (str: string) => typeof str === "string" && str.trim() !== "" && Number.isFinite(+str);

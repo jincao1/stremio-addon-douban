@@ -102,6 +102,7 @@ export async function saveUserConfig(
     catalogIds: string[];
     imageProxy: string;
     dynamicCollections: boolean;
+    fanart?: { enabled: boolean; apiKey?: string };
   },
 ): Promise<void> {
   const db = getDrizzle(c.env);
@@ -113,6 +114,8 @@ export async function saveUserConfig(
       catalogIds: config.catalogIds,
       imageProxy: config.imageProxy,
       dynamicCollections: config.dynamicCollections,
+      fanartEnabled: config.fanart?.enabled ?? false,
+      fanartApiKey: config.fanart?.apiKey,
     })
     .onConflictDoUpdate({
       target: userConfigs.userId,
@@ -120,6 +123,8 @@ export async function saveUserConfig(
         catalogIds: config.catalogIds,
         imageProxy: config.imageProxy,
         dynamicCollections: config.dynamicCollections,
+        fanartEnabled: config.fanart?.enabled ?? false,
+        fanartApiKey: config.fanart?.apiKey,
       },
     });
 }

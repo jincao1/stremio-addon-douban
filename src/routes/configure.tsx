@@ -63,8 +63,8 @@ configureRoute.post("/", async (c) => {
     return c.redirect(`/${user.id}/configure`);
   }
 
-  // 未登录或未 Star 用户使用传统方式
-  const config = encodeConfig({ catalogIds, imageProxy, dynamicCollections });
+  // 未登录或未 Star 用户使用传统方式（不包含 fanart 配置）
+  const config = encodeConfig({ catalogIds, imageProxy, dynamicCollections, fanart: { enabled: false } });
   setCookie(c, "config", config);
   return c.redirect(`/${config}/configure`);
 });

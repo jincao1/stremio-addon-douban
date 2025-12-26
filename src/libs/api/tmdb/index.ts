@@ -1,4 +1,5 @@
-import { BaseAPI } from "../base";
+import { SECONDS_PER_WEEK } from "@/libs/constants";
+import { BaseAPI, CacheType } from "../base";
 import { tmdbFindResultSchema, tmdbSearchResultSchema } from "./schema";
 
 export class TmdbAPI extends BaseAPI {
@@ -44,6 +45,14 @@ export class TmdbAPI extends BaseAPI {
     return this.request<{
       id: number;
       imdb_id: string;
-    }>({ url: `/${type}/${id}/external_ids` });
+      tvdb_id: string;
+    }>({
+      url: `/${type}/${id}/external_ids`,
+      cache: {
+        key: `tmdb:${type}:${id}:external_ids`,
+        ttl: SECONDS_PER_WEEK,
+        type: CacheType.LOCAL | CacheType.KV,
+      },
+    });
   }
 }
