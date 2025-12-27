@@ -1,4 +1,4 @@
-# Stremio addon for Douban
+# Douban addon for Stremio
 
 Douban addon for Stremio.
 

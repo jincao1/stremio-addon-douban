@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm";
 import { type Env, Hono } from "hono";
 import { doubanMapping } from "@/db";
 import { api } from "@/libs/api";
+import { ImageUrlGenerator } from "@/libs/images";
 import { matchResourceRoute } from "@/libs/router";
-import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
+import { isForwardUserAgent } from "@/libs/utils";
 
 export const metaRoute = new Hono<Env>();
 
@@ -33,13 +34,11 @@ metaRoute.get("*", async (c) => {
   const config = await api.getUserConfig(userId ?? "");
 
   const data = await api.doubanAPI.getSubjectDetail(doubanId);
-  const poster = generateImageUrl(data.cover_url || data.pic?.large || data.pic?.normal || "", config.imageProxy);
+
   const meta: MetaDetail & { [key: string]: any } = {
     id: metaId,
     type: data.type === "tv" ? "series" : "movie",
     name: data.title,
-    poster: poster,
-    background: poster,
     description: data.intro ?? undefined,
     genres: data.genres ?? undefined,
     links: [
@@ -70,18 +69,33 @@ metaRoute.get("*", async (c) => {
 
   const dbData = await api.db.query.doubanMapping.findFirst({ where: eq(doubanMapping.doubanId, doubanId) });
 
-  if (dbData?.tmdbId) {
+  const { tmdbId, imdbId } = dbData || {};
+
+  if (tmdbId) {
     if (isInForward) {
-      meta.tmdb_id = `tmdb:${dbData.tmdbId}`;
+      meta.tmdb_id = `tmdb:${tmdbId}`;
     } else {
-      meta.tmdbId = dbData.tmdbId;
+      meta.tmdbId = tmdbId;
     }
-    meta.behaviorHints.defaultVideoId = `tmdb:${dbData.tmdbId}`;
+    meta.behaviorHints.defaultVideoId = `tmdb:${tmdbId}`;
   }
-  if (dbData?.imdbId) {
-    meta.imdb_id = dbData.imdbId;
-    meta.behaviorHints.defaultVideoId = dbData.imdbId;
+  if (imdbId) {
+    meta.imdb_id = imdbId;
+    meta.behaviorHints.defaultVideoId = imdbId;
   }
+
+  const imageUrlGenerator = new ImageUrlGenerator(config.imageProviders);
+  const images = await imageUrlGenerator.generate({
+    doubanInfo: {
+      cover: data.cover_url || data.pic?.large || data.pic?.normal || "",
+      type: data.type,
+    },
+    tmdbId,
+    imdbId,
+  });
+  meta.poster = images.poster;
+  meta.background = images.background;
+  meta.logo = images.logo;
 
   return c.json({
     meta,

@@ -1,11 +1,11 @@
-import type { AddonBuilder, MetaPreview } from "@stremio-addon/sdk";
+import type { AddonBuilder, MetaDetail } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
-import { generateId } from "@/libs/catalog";
-import { getLatestYearlyRanking, isYearlyRankingId } from "@/libs/catalog-shared";
+import { generateId, getLatestYearlyRanking, isYearlyRankingId } from "@/libs/collections";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
+import { ImageUrlGenerator } from "@/libs/images";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
-import { generateImageUrl, isForwardUserAgent } from "@/libs/utils";
+import { isForwardUserAgent } from "@/libs/utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
@@ -81,44 +81,44 @@ catalogRoute.get("*", async (c) => {
 
   const isInForward = isForwardUserAgent(c);
 
-  // 构建响应
-  const metas = items.map((item) => {
-    const mapping = mappingCache.get(item.id);
-    const { imdbId, tmdbId } = mapping ?? {};
-    const result: MetaPreview & { [key: string]: any } = {
-      id: generateId(item.id, mapping),
-      name: item.title,
-      type: item.type === "tv" ? "series" : "movie",
-      poster: generateImageUrl(item.cover ?? "", config.imageProxy),
-      description: item.description ?? undefined,
-      background: generateImageUrl(item.photos?.[0] ?? "", config.imageProxy),
-      links: [
-        ...(item.directors ?? []).map((item) => ({
-          name: item,
-          category: "director",
-          url: `stremio:///search?search=${item}`,
-        })), // url is required.
-        ...(item.actors ?? []).map((item) => ({
-          name: item,
-          category: "cast",
-          url: `stremio:///search?search=${item}`,
-        })), // url is required.
-        { name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "" },
-      ],
-    };
-    if (imdbId) {
-      result.imdb_id = imdbId;
-    }
-    if (tmdbId) {
-      if (isInForward) {
-        result.tmdb_id = `tmdb:${tmdbId}`;
-      } else {
-        result.tmdbId = tmdbId;
-      }
-    }
+  const imageUrlGenerator = new ImageUrlGenerator(config.imageProviders);
 
-    return result;
-  });
+  // 构建响应
+  const metas = await Promise.all(
+    items.map(async (item) => {
+      const mapping = mappingCache.get(item.id);
+      const { imdbId, tmdbId } = mapping ?? {};
+      const [, , genres] = item.card_subtitle?.split("/") ?? [];
+      const images = await imageUrlGenerator.generate({
+        doubanInfo: item,
+        tmdbId,
+        imdbId,
+      });
+      const result: MetaDetail & { [key: string]: any } = {
+        id: generateId(item.id, mapping),
+        type: item.type === "tv" ? "series" : "movie",
+        name: item.title,
+        description: item.description ?? item.card_subtitle ?? undefined,
+        poster: images.poster,
+        background: images.background,
+        logo: images.logo,
+        year: item.year,
+        genres: genres?.trim().split(" ") ?? [],
+        links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "#" }],
+      };
+      if (imdbId) {
+        result.imdb_id = imdbId;
+      }
+      if (tmdbId) {
+        if (isInForward) {
+          result.tmdb_id = `tmdb:${tmdbId}`;
+        } else {
+          result.tmdbId = tmdbId;
+        }
+      }
+      return result;
+    }),
+  );
 
   return c.json({
     metas,

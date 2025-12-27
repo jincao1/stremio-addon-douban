@@ -8,14 +8,16 @@ import { Configure, type ConfigureProps } from "@/components/configure";
 import { api } from "@/libs/api";
 import { type Config, configSchema, isUserId } from "@/libs/config";
 
-export const configureRoute = new Hono<Env>().put("/", zValidator("json", configSchema), async (c) => {
+export const configureRoute = new Hono<Env>().post("/", zValidator("json", configSchema), async (c) => {
   const config = c.req.valid("json");
-  const userId = c.req.header("X-User-ID") || "";
+  const userId = c.req.header("X-User-ID") || crypto.randomUUID();
   if (!isUserId(userId)) {
     return c.json({ message: "Invalid User" }, 500);
   }
   await api.saveUserConfig(userId, config);
-  return c.json({ success: true });
+  const { origin } = new URL(c.req.url);
+  const manifestUrl = `${origin}/${userId}/manifest.json`;
+  return c.json({ success: true, manifestUrl, userId });
 });
 
 export type ConfigureRoute = typeof configureRoute;
@@ -41,23 +43,6 @@ configureRoute.get(
   }),
 );
 
-// POST 处理配置保存
-configureRoute.post("/", async (c) => {
-  const formData = await c.req.formData();
-
-  let userId = c.req.param("config") || formData.get("user-id")?.toString();
-  if (!userId) {
-    userId = crypto.randomUUID();
-  }
-  await api.saveUserConfig(userId, {
-    catalogIds: formData.get("catalogIds")?.toString().split(",").filter(Boolean) ?? [],
-    imageProxy: formData.get("imageProxy")?.toString() ?? "weserv",
-    dynamicCollections: formData.get("dynamicCollections")?.toString() === "on",
-  } as Config); // creates the user config
-
-  return c.redirect(`/${userId}/configure`);
-});
-
 configureRoute.get("/", async (c) => {
   const userId = c.req.param("config") || "";
   const config: Config = await api.getUserConfig(userId);
@@ -67,7 +52,7 @@ configureRoute.get("/", async (c) => {
   const configureProps: ConfigureProps = {
     userId,
     config,
-    manifestUrl: `${origin}/${userId}/manifest.json`,
+    manifestUrl: `${origin}/${userId ? `${userId}/manifest.json` : `manifest.json`}`,
   };
 
   return c.render(

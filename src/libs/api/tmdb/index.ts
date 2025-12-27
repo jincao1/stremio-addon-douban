@@ -1,12 +1,15 @@
-import { SECONDS_PER_DAY } from "@/libs/constants";
-import { BaseAPI } from "../base";
-import { tmdbFindResultSchema, tmdbSearchResultSchema } from "./schema";
+import { SECONDS_PER_WEEK } from "@/libs/constants";
+import { BaseAPI, CacheType } from "../base";
+import { tmdbFindResultSchema, tmdbSearchResultSchema, tmdbSubjectImagesSchema } from "./schema";
 
 export class TmdbAPI extends BaseAPI {
-  constructor() {
+  constructor(apiKey?: string) {
     super({ baseURL: "https://api.themoviedb.org/3" });
     this.axios.interceptors.request.use((config) => {
-      config.headers.set("Authorization", `Bearer ${this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`);
+      config.headers.set(
+        "Authorization",
+        `Bearer ${apiKey || this.context.env.TMDB_API_KEY || process.env.TMDB_API_KEY}`,
+      );
       return config;
     });
   }
@@ -41,19 +44,33 @@ export class TmdbAPI extends BaseAPI {
     return tmdbFindResultSchema.parse(resp);
   }
 
-  async searchById(type: "movie" | "tv", id: number) {
-    const resp = await this.request({
-      url: `/${type}/${id}`,
-      cache: { key: `tmdb:search:${type}Id:${id}`, ttl: 1000 * SECONDS_PER_DAY },
-    });
-
-    return tmdbSearchResultSchema.parse({ results: [resp] });
-  }
-
   getExternalId(type: "movie" | "tv", id: number) {
     return this.request<{
       id: number;
       imdb_id: string;
-    }>({ url: `/${type}/${id}/external_ids` });
+      tvdb_id: string;
+    }>({
+      url: `/${type}/${id}/external_ids`,
+      cache: {
+        key: `tmdb:${type}:${id}:external_ids`,
+        ttl: SECONDS_PER_WEEK,
+        type: CacheType.LOCAL | CacheType.KV,
+      },
+    });
+  }
+
+  async getSubjectImages(type: "movie" | "tv", id: number) {
+    const resp = await this.request({
+      url: `/${type}/${id}/images`,
+      params: {
+        include_image_language: ["zh", "en", "ja", "ko", "null"].join(","),
+      },
+      cache: {
+        key: `tmdb:${type}:${id}:images`,
+        ttl: SECONDS_PER_WEEK,
+        type: CacheType.LOCAL | CacheType.KV,
+      },
+    });
+    return tmdbSubjectImagesSchema.parse(resp);
   }
 }
