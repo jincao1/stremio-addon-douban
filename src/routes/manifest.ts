@@ -11,9 +11,6 @@ export const manifestRoute = new Hono<Env>();
 manifestRoute.get("/", async (c) => {
   const configId = c.req.param("config");
   const config = await api.getUserConfig(configId ?? "");
-  if (configId && !config) {
-    return c.notFound();
-  }
   const catalogs = await getCatalogs(config);
   return c.json({
     id: `${pkg.name}.${configId}`,
