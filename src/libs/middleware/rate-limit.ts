@@ -6,7 +6,7 @@ export const rateLimit = createMiddleware<Env>(async (c, next) => {
   let success = false;
 
   const [, configId] = new URL(c.req.url).pathname.split("/");
-  if (isUserId(configId)) {
+  if (isUserId(configId) && c.req.header("User-Agent")) {
     ({ success } = await c.env.USER_RATE_LIMIT.limit({ key: configId }));
   } else {
     const key = c.req.header("cf-connecting-ip") ?? "unknown";
