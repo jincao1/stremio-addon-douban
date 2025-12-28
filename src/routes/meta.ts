@@ -94,7 +94,7 @@ metaRoute.get("*", async (c) => {
     imdbId,
   });
   meta.poster = images.poster;
-  meta.background = images.background;
+  meta.background = images.background || images.poster;
   meta.logo = images.logo;
 
   return c.json({
