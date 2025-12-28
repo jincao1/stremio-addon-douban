@@ -135,6 +135,7 @@ export const Configure: FC<ConfigureProps> = ({
     forwardUrl.searchParams.set("url", manifestUrl);
     return {
       stremio: stremioUrl,
+      stremioWeb: `https://web.stremio.com/#/addons?addon=${encodeURIComponent(manifestUrl)}`,
       forward: forwardUrl.toString(),
     };
   }, [manifestUrl]);
@@ -307,6 +308,12 @@ export const Configure: FC<ConfigureProps> = ({
                         <a href={manifestUrlConfigs.stremio}>
                           <img className="size-4" src="https://www.stremio.com/website/stremio-logo-small.png" />
                           导入 Stremio
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild onClick={handleImport}>
+                        <a href={manifestUrlConfigs.stremioWeb} target="_blank">
+                          <img className="size-4" src="https://www.stremio.com/website/stremio-logo-small.png" />
+                          导入 Stremio (Web)
                         </a>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild onClick={handleImport}>
