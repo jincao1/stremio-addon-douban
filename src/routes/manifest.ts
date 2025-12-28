@@ -28,6 +28,5 @@ manifestRoute.get("/", async (c) => {
     behaviorHints: {
       configurable: true,
     },
-    currentConfig: config,
-  } satisfies Manifest & { currentConfig: Config });
+  } satisfies Manifest);
 });

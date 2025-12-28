@@ -1,7 +1,13 @@
 import type { ManifestCatalog } from "@stremio-addon/sdk";
 import pLimit from "p-limit";
-import { api } from "./api";
-import { COLLECTION_CONFIGS, DEFAULT_COLLECTION_IDS, getLatestYearlyRanking, isYearlyRankingId } from "./collections";
+import { api, DoubanAPI } from "./api";
+import {
+  COLLECTION_CONFIGS,
+  DEFAULT_COLLECTION_IDS,
+  getLatestYearlyRanking,
+  isYearlyRankingId,
+  YEARLY_RANKING_CONFIGS,
+} from "./collections";
 import type { Config } from "./config";
 
 export const getCatalogs = async (config: Config) => {
@@ -9,7 +15,7 @@ export const getCatalogs = async (config: Config) => {
   const catalogsPromises: Promise<ManifestCatalog>[] = [];
 
   const catalogIdsSet = new Set(config.catalogIds || DEFAULT_COLLECTION_IDS);
-  const catalogMap = new Map(COLLECTION_CONFIGS.map((item) => [item.id, item]));
+  const catalogMap = new Map([...COLLECTION_CONFIGS, ...YEARLY_RANKING_CONFIGS].map((item) => [item.id, item]));
 
   if (config.dynamicCollections) {
     const categories = [
@@ -62,6 +68,7 @@ export const getCatalogs = async (config: Config) => {
         }
         result.extra ||= [];
         result.extra.push({ name: "skip" });
+
         if (item.hasGenre) {
           const info = await api.doubanAPI.getSubjectCollectionCategory(collectionId).catch(() => null);
           const categoryItems = info?.items ?? [];

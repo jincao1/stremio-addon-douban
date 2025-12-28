@@ -129,6 +129,16 @@ export const Configure: FC<ConfigureProps> = ({
   const movieConfigs = useMemo(() => getConfigsByType("movie"), [getConfigsByType]);
   const seriesConfigs = useMemo(() => getConfigsByType("series"), [getConfigsByType]);
 
+  const manifestUrlConfigs = useMemo(() => {
+    const stremioUrl = manifestUrl.replace(/^https?:\/\//, "stremio://");
+    const forwardUrl = new URL("forward://stremio");
+    forwardUrl.searchParams.set("url", manifestUrl);
+    return {
+      stremio: stremioUrl,
+      forward: forwardUrl.toString(),
+    };
+  }, [manifestUrl]);
+
   return (
     <>
       <form
@@ -294,9 +304,15 @@ export const Configure: FC<ConfigureProps> = ({
                         复制链接
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild onClick={handleImport}>
-                        <a href={`${manifestUrl.replace(/^https?:\/\//, "stremio://")}`}>
-                          <HardDriveDownload />
-                          导入配置
+                        <a href={manifestUrlConfigs.stremio}>
+                          <img className="size-4" src="https://www.stremio.com/website/stremio-logo-small.png" />
+                          导入 Stremio
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild onClick={handleImport}>
+                        <a href={manifestUrlConfigs.forward}>
+                          <img className="size-4" src="https://forward.inch.red/_astro/icon.DSrm6bPi_Z1P1wLe.webp" />
+                          导入 Forward
                         </a>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
