@@ -6,7 +6,7 @@ import { getConfig } from "@/libs/config";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { ImageUrlGenerator } from "@/libs/images";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
-import { isForwardUserAgent } from "@/libs/utils";
+import { generateId, isForwardUserAgent } from "@/libs/utils";
 
 type CatalogResponse = Awaited<ReturnType<Parameters<AddonBuilder["defineCatalogHandler"]>[0]>>;
 
@@ -116,6 +116,9 @@ catalogRoute.get("*", async (c) => {
         } else {
           result.tmdbId = tmdbId;
         }
+      }
+      if (isInForward) {
+        result.id = generateId({ doubanId: item.id, imdbId, tmdbId });
       }
       return result;
     }),
