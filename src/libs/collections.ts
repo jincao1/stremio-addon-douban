@@ -160,14 +160,4 @@ export const isYearlyRankingId = (id: string): id is keyof typeof YEARLY_RANKING
 export const getLatestYearlyRanking = (id: string): YearlyRankingItem | undefined =>
   isYearlyRankingId(id) ? maxBy(YEARLY_RANKINGS[id], (item) => item.year) : undefined;
 
-export const generateId = (doubanId: number, params?: Partial<Omit<DoubanIdMapping, "doubanId">>) => {
-  if (params?.tmdbId) {
-    return `tmdb:${params.tmdbId}`;
-  }
-  if (params?.imdbId) {
-    return params.imdbId;
-  }
-  return `douban:${doubanId}`;
-};
-
 //#endregion

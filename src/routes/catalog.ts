@@ -1,7 +1,7 @@
 import type { AddonBuilder, MetaDetail } from "@stremio-addon/sdk";
 import { type Env, Hono } from "hono";
 import { api } from "@/libs/api";
-import { generateId, getLatestYearlyRanking, isYearlyRankingId } from "@/libs/collections";
+import { getLatestYearlyRanking, isYearlyRankingId } from "@/libs/collections";
 import { SECONDS_PER_DAY, SECONDS_PER_WEEK } from "@/libs/constants";
 import { ImageUrlGenerator } from "@/libs/images";
 import { getExtraFactory, matchResourceRoute } from "@/libs/router";
@@ -95,7 +95,7 @@ catalogRoute.get("*", async (c) => {
         imdbId,
       });
       const result: MetaDetail & { [key: string]: any } = {
-        id: generateId(item.id, mapping),
+        id: generateId({ doubanId: item.id, imdbId, tmdbId }),
         type: item.type === "tv" ? "series" : "movie",
         name: item.title,
         description: item.description ?? item.card_subtitle ?? undefined,
