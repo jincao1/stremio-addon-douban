@@ -47,7 +47,7 @@
       "name": "USER_RATE_LIMIT",
       "namespace_id": "1002",
       "simple": {
-        "limit": 300,
+        "limit": 600,
         "period": 60
       }
     }
