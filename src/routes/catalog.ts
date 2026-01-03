@@ -116,7 +116,11 @@ catalogRoute.get("*", async (c) => {
             category: "cast",
             url: `stremio:///search?search=${name}`,
           })), // url is required.
-          { name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "#" },
+          {
+            name: `豆瓣评分：${item.rating?.value ?? "N/A"}`,
+            category: "douban",
+            url: item.url ?? `https://movie.douban.com/subject/${item.id}`, // need this, stremio is unhappy if this is not a valid url
+          },
         ],
         releaseInfo: item.year,
         website: item.url ?? undefined,
