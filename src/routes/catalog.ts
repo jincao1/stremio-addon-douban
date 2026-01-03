@@ -89,6 +89,7 @@ catalogRoute.get("*", async (c) => {
       const mapping = mappingCache.get(item.id);
       const { imdbId, tmdbId } = mapping ?? {};
       const [, , genres] = item.card_subtitle?.split("/") ?? [];
+      const [country] = item.info?.split("/") ?? [];
       const images = await imageUrlGenerator.generate({
         doubanInfo: item,
         tmdbId,
@@ -104,7 +105,22 @@ catalogRoute.get("*", async (c) => {
         logo: images.logo,
         year: item.year,
         genres: genres?.trim().split(" ") ?? [],
-        links: [{ name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "#" }],
+        links: [
+          ...(item.directors ?? []).map((name) => ({
+            name: name,
+            category: "director",
+            url: `stremio:///search?search=${name}`,
+          })), // url is required.
+          ...(item.actors ?? []).map((name) => ({
+            name: name,
+            category: "cast",
+            url: `stremio:///search?search=${name}`,
+          })), // url is required.
+          { name: `豆瓣评分：${item.rating?.value ?? "N/A"}`, category: "douban", url: item.url ?? "#" },
+        ],
+        releaseInfo: item.year,
+        website: item.url ?? undefined,
+        country: country?.trim() ?? undefined,
       };
       if (imdbId) {
         result.imdb_id = imdbId;

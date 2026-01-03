@@ -48,6 +48,7 @@ const doubanSubjectCollectionItemSchema = z
       .nullish(),
     photos: z.array(z.string()).nullish(),
     description: z.string().nullish(),
+    info: z.string().nullish(),
     comment: z.string().nullish(),
     directors: z.array(z.string()).nullish(),
     actors: z.array(z.string()).nullish(),

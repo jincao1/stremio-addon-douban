@@ -63,6 +63,7 @@ metaRoute.get("*", async (c) => {
     country: data.countries?.join(" / "),
     awards: data.honor_infos?.map((item) => item.title).join(" / "),
     releaseInfo: data.year ?? undefined,
+    website: data.url ?? undefined,
   };
   meta.behaviorHints ||= {};
   const isInForward = isForwardUserAgent(c);
