@@ -104,11 +104,20 @@ catalogRoute.get("*", async (c) => {
         background: images.background,
         logo: images.logo,
         year: item.year,
-        genres: genres?.trim().split(" ") ?? [],
         links: [
+          ...(country ? country.trim().split(" ") : []).map((country) => ({
+            name: country,
+            category: "country",
+            url: `stremio:///search?search=${country}`,
+          })),
+          ...(genres?.trim().split(" ") ?? []).map((genre) => ({
+            name: genre,
+            category: "genres",
+            url: `stremio:///search?search=${genre}`,
+          })), // url is required.
           ...(item.directors ?? []).map((name) => ({
             name: name,
-            category: "director",
+            category: "directors",
             url: `stremio:///search?search=${name}`,
           })), // url is required.
           ...(item.actors ?? []).map((name) => ({

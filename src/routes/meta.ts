@@ -40,11 +40,20 @@ metaRoute.get("*", async (c) => {
     type: data.type === "tv" ? "series" : "movie",
     name: data.title,
     description: data.intro ?? undefined,
-    genres: data.genres ?? undefined,
     links: [
+      ...(data.countries ?? []).map((country) => ({
+        name: country,
+        category: "country",
+        url: `stremio:///search?search=${country}`,
+      })),
+      ...(data.genres ?? []).map((item) => ({
+        name: item,
+        category: "genres",
+        url: `stremio:///search?search=${item}`,
+      })), // url is required.
       ...(data.directors ?? []).map((item) => ({
         name: item.name,
-        category: "director",
+        category: "directors",
         url: `stremio:///search?search=${item.name}`,
       })), // url is required.
       ...(data.actors ?? []).map((item) => ({

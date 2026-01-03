@@ -1,6 +1,6 @@
 import type { ManifestCatalog } from "@stremio-addon/sdk";
 import pLimit from "p-limit";
-import { api, DoubanAPI } from "./api";
+import { api } from "./api";
 import {
   COLLECTION_CONFIGS,
   DEFAULT_COLLECTION_IDS,
